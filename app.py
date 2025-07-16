@@ -196,11 +196,14 @@ elif tab == "Performance Breakdown":
     rows = []
     for _, r in picks.iterrows():
         team_logo = logo_map.get(r.Team, "")
+        opp_logo = logo_map.get(r.Opponent, "")
         team_html = f'<img src="{team_logo}" width="32">' if team_logo else ""
+        opp_html  = f'<img src="{opp_logo}" width="32">' if opp_logo else ""
         rows.append({
             "Role": r.Role,
             "Player": r.Player,
             "Team": team_html,
+            "Opponent": opp_html,
             "Score": r.Score,
         })
     df_html = pd.DataFrame(rows)
@@ -225,7 +228,7 @@ elif tab == "Performance Breakdown":
         unsafe_allow_html=True,
     )
     st.markdown(html, unsafe_allow_html=True)
-
+    
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
     st.title("📋 All Picks (Sorted by Score)")
