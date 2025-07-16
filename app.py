@@ -281,41 +281,41 @@ elif tab == "Performance Breakdown":
     )
     st.markdown(html, unsafe_allow_html=True)
 
-        # ---- Full Season by Category Table (filtered by player only) ----
-        st.subheader(f"Full Season by Category ({player})")
-    
-        player_info = info.query("Player == @player")
-        pivot = (
-            player_info.pivot_table(
-                index="Week",
-                columns="Role",
-                values="Score",
-                aggfunc="sum",
-                fill_value=0
-            )
+    # ---- Full Season by Category Table (filtered by player only) ----
+    st.subheader(f"Full Season by Category ({player})")
+
+    player_info = info.query("Player == @player")
+    pivot = (
+        player_info.pivot_table(
+            index="Week",
+            columns="Role",
+            values="Score",
+            aggfunc="sum",
+            fill_value=0
         )
-        for role in ["Passing", "Rushing", "Receiving", "Defensive"]:
-            if role not in pivot.columns:
-                pivot[role] = 0
-        pivot = pivot[["Passing", "Rushing", "Receiving", "Defensive"]]
-        pivot["Total"] = pivot.sum(axis=1)
-        pivot = pivot.reindex(WEEK_ORDER)
-        pivot.loc["Total"] = pivot.sum(numeric_only=True)
-    
-        # Format for display_table
-        pivot_reset = pivot.reset_index()
-        cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
-        pivot_reset = pivot_reset[cols]
-        pivot_reset = pivot_reset.replace({np.nan: ""})
-    
-        display_table(
-            pivot_reset,
-            highlight="Total",  # Highlight/embolden the "Total" column
-            highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],  # Gradient fill on stat columns
-            bold_row="Total",   # Bold and highlight the "Total" row
-            short_weeks=True,   # Shorten week labels as per your latest
-        )
-    
+    )
+    for role in ["Passing", "Rushing", "Receiving", "Defensive"]:
+        if role not in pivot.columns:
+            pivot[role] = 0
+    pivot = pivot[["Passing", "Rushing", "Receiving", "Defensive"]]
+    pivot["Total"] = pivot.sum(axis=1)
+    pivot = pivot.reindex(WEEK_ORDER)
+    pivot.loc["Total"] = pivot.sum(numeric_only=True)
+
+    # Format for display_table
+    pivot_reset = pivot.reset_index()
+    cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
+    pivot_reset = pivot_reset[cols]
+    pivot_reset = pivot_reset.replace({np.nan: ""})
+
+    display_table(
+        pivot_reset,
+        highlight="Total",  # Highlight/embolden the "Total" column
+        highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],  # Gradient fill on stat columns
+        bold_row="Total",   # Bold and highlight the "Total" row
+        short_weeks=True,   # Shorten week labels as per your latest
+    )
+
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
     st.title("📋 All Picks (Sorted by Score)")
