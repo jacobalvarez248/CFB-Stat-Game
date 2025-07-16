@@ -194,7 +194,7 @@ elif tab == "Player Stats":
 # ─── TAB 4: Recaps ───────────────────────────────────────────────────────────────
 elif tab == "Recaps":
     st.title("📰 Weekly Recaps")
-    recap_dir = Path("assets/recaps")
+    recap_dir = Path("assets")/"recaps"
     if not recap_dir.exists():
         st.info("Drop your `Week 1 Recap.pdf`, `Week 2 Recap.pdf`, … into `assets/recaps/`.")
     else:
