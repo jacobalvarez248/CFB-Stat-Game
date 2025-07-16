@@ -36,12 +36,29 @@ if tab == "Standings":
     # conditional formatting: e.g. using st_aggrid for mobile
     from st_aggrid import AgGrid, GridOptionsBuilder
 
-    gb = GridOptionsBuilder.from_dataframe(df[["Rank","Player","Score","Pts. From 1st"]])
-    gb.configure_column("Score", type=["numericColumn","numberColumnFilter"], 
-                        cellStyle=cellStyleJs=["value < 0 ? {'color':'white','background':'#002060'} : {'color':'black','background':'#d3d3d3'}"])
-    gridOptions = gb.build()
-    AgGrid(df, gridOptions=gridOptions, fit_columns_on_grid_load=True)
-
+    # … after you’ve built your df …
+    
+    gb = GridOptionsBuilder.from_dataframe(
+        df[["Rank","Player","Score","Pts. From 1st"]]
+    )
+    gb.configure_column(
+        "Score",
+        type=["numericColumn","numberColumnFilter"],
+        # note: no “cellStyle=” on the left, just cellStyleJs=
+        cellStyleJs=(
+            "value < 0 "
+            "? {'color':'white','background':'#002060'} "
+            ": {'color':'black','background':'#d3d3d3'}"
+        )
+    )
+    grid_options = gb.build()
+    
+    AgGrid(
+        df,
+        gridOptions=grid_options,
+        fit_columns_on_grid_load=True,
+        enable_enterprise_modules=False,
+    )
     # bump chart: Rankings by Week
     # we need a long-form DataFrame: one row per Player×Week with their rank
     week_ranks = (
