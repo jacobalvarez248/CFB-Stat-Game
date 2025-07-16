@@ -201,7 +201,7 @@ elif tab == "Performance Breakdown":
         opp_html  = f'<img src="{opp_logo}" width="32">' if opp_logo else ""
         rows.append({
             "Role": r.Role,
-            "Player": r.Player,
+            "Player": r.Pick,
             "Team": team_html,
             "Opponent": opp_html,
             "Score": r.Score,
