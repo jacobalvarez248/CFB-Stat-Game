@@ -169,7 +169,7 @@ if tab == "Standings":
                     titleFontSize=8,
                     symbolLimit=30,
                     symbolSize=30,
-                    rows=2
+                    columns=8
                 )
             ),
             order=alt.Order("week_idx:O"),
