@@ -6,24 +6,6 @@ from pathlib import Path
 from matplotlib.colors import LinearSegmentedColormap
 import itertools
 
-# Get all unique players and weeks
-players = sorted(info["Player"].unique())
-weeks = WEEK_ORDER
-
-# Build a complete index (all player-week pairs)
-full_index = pd.MultiIndex.from_product([players, weeks], names=["Player", "Week"])
-full_df = pd.DataFrame(index=full_index).reset_index()
-
-# Merge your rankings_by_week onto the complete grid
-rankings_by_week["Week"] = rankings_by_week["Week"].astype(str)
-full_df["Week"] = full_df["Week"].astype(str)
-merged = pd.merge(full_df, rankings_by_week, on=["Player", "Week"], how="left")
-
-# Now make Week a categorical for Altair (so sorting is correct)
-merged["Week"] = pd.Categorical(merged["Week"], categories=WEEK_ORDER, ordered=True)
-merged = merged.sort_values(["Player", "Week"])
-
-
 #---WEEK ORDER-----------------------------------
 WEEK_ORDER = [f"Week {i}" for i in range(1, 17)] + ["Bowls"]
 
@@ -118,18 +100,6 @@ if tab == "Standings":
     display_table(df, highlight="Score")
 
     st.subheader("🔀 Rankings by Week")
-    week_scores = (
-        info.pivot_table(
-            index="Week",
-            columns="Player",
-            values="Score",
-            aggfunc="sum",
-        )
-        .rank(axis=1, ascending=True, method="first")
-        .reset_index()
-        .melt("Week", var_name="Player", value_name="Rank")
-    )
-    
     # Calculate cumulative score per player per week
     info["CumulativeScore"] = info.groupby("Player")["Score"].cumsum()
     
@@ -149,10 +119,21 @@ if tab == "Standings":
         .melt(id_vars="Week", var_name="Player", value_name="Rank")
     )
     
-    # Enforce week order and sort by Player then Week for correct line order
-    rankings_by_week["Week"] = pd.Categorical(rankings_by_week["Week"], categories=WEEK_ORDER, ordered=True)
-    rankings_by_week = rankings_by_week.sort_values(["Player", "Week"])
-    
+    # --- Build the complete (Player, Week) grid and merge for smooth lines ---
+    players = sorted(info["Player"].unique())
+    weeks = WEEK_ORDER
+    full_index = pd.MultiIndex.from_product([players, weeks], names=["Player", "Week"])
+    full_df = pd.DataFrame(index=full_index).reset_index()
+
+    # Merge the rankings onto this grid
+    rankings_by_week["Week"] = rankings_by_week["Week"].astype(str)
+    full_df["Week"] = full_df["Week"].astype(str)
+    merged = pd.merge(full_df, rankings_by_week, on=["Player", "Week"], how="left")
+
+    # Categorical and sort for plotting
+    merged["Week"] = pd.Categorical(merged["Week"], categories=WEEK_ORDER, ordered=True)
+    merged = merged.sort_values(["Player", "Week"])
+
     # Build Chart
     chart = (
         alt.Chart(merged)
