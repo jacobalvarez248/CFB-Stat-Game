@@ -183,8 +183,9 @@ if tab == "Standings":
 elif tab == "Performance Breakdown":
     st.title("📊 Performance Breakdown")
     player = st.selectbox("Player", sorted(info["Player"].unique()))
-    week   = st.selectbox("Week",   sorted(info["Week"].unique()))
-
+    week_options = [w for w in WEEK_ORDER if w in info["Week"].unique()]
+    week = st.selectbox("Week", week_options)
+    
     st.subheader(f"Picks: {player} — Week {week}")
     picks = info.query("Player == @player and Week == @week")
     display_table(picks[["Role","Player","Team","Opponent","Score"]], highlight="Score")
