@@ -6,7 +6,7 @@ from pathlib import Path
 from matplotlib.colors import LinearSegmentedColormap
 
 #---WEEK ORDER-----------------------------------
-WEEK_ORDER = [f"Week {i}" for i in range(1, 16)] + ["Bowls"]
+WEEK_ORDER = [f"Week {i}" for i in range(1, 17)] + ["Bowls"]
 
 # ─── 1) Page & Theme Config ────────────────────────────────────────────────────
 st.set_page_config(
