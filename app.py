@@ -245,9 +245,8 @@ elif tab == "Performance Breakdown":
 
     # ---- Full Season by Category Table
     st.subheader("Full Season by Category")
-    filtered_info = info.query("Player == @player")
     pivot = (
-        filtered_info.pivot_table(
+        info.pivot_table(
             index="Week",
             columns="Role",
             values="Score",
