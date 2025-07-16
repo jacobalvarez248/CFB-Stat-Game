@@ -39,15 +39,12 @@ def display_table(
             ("font-size", "13px"),
             ("padding", "4px 2px"),
         ]},
+        # Force 100% width and fixed layout, but DO NOT set background-color on the table itself!
+        {"selector": "table", "props": [
+            ("width", "100%"),
+            ("table-layout", "fixed"),
+        ]},
     ]
-    st.markdown(
-        """
-        <style>
-          .dataframe {width:100% !important; table-layout: fixed;}
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
 
     num_cols = df.select_dtypes(include="number").columns
 
@@ -72,18 +69,18 @@ def display_table(
             return w
         styler.format({"Week": short_week_label})
 
-    # Highlight columns
+    # Highlight columns with gradient
     if highlight_cols:
         for col in highlight_cols:
             if col in df.columns:
                 styler = styler.background_gradient(cmap=cmap, subset=[col])
 
-    # Highlight the total column
+    # Highlight and bold the total column
     if highlight and highlight in df.columns:
         styler = styler.set_properties(subset=[highlight], **{'font-weight': 'bold', 'background-color': '#dae3f3'})
 
-    # Bold the Total row if present
-    if bold_row:
+    # Bold and highlight the total row if present
+    if bold_row and "Week" in df.columns:
         if bold_row in df["Week"].values:
             idx = df.index[df["Week"] == bold_row][0]
             styler = styler.set_properties(subset=pd.IndexSlice[idx, :], **{'font-weight': 'bold', 'background-color': '#dae3f3'})
