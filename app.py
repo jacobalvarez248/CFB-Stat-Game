@@ -428,6 +428,8 @@ elif tab == "Player Stats":
 elif tab == "Recaps":
     st.title("📰 Weekly Recaps")
 
+    WEEK_ORDER = [f"Week {i}" for i in range(1, 17)] + ["Bowls"]
+
     GITHUB_USER = "jacobalvarez248"
     GITHUB_REPO = "CFB-Stat-Game"
     GITHUB_BRANCH = "main"
@@ -438,12 +440,23 @@ elif tab == "Recaps":
         resp = requests.get(GITHUB_API_URL)
         resp.raise_for_status()
         files = resp.json()
-        recaps = [f for f in files if f['name'].endswith('.pdf')]
-        for f in sorted(recaps, key=lambda x: x['name']):
-            label = f['name'].replace(".pdf", "")
-            st.markdown(f"- [{label}]({f['download_url']})")
+        # Map week (e.g. "Week 1", "Bowls") to the file object
+        week_file_map = {}
+        for f in files:
+            name = f['name']
+            for week in WEEK_ORDER:
+                if name.lower().startswith(week.lower()):
+                    week_file_map[week] = f
+        # Loop through weeks in order
+        for week in WEEK_ORDER:
+            if week in week_file_map:
+                f = week_file_map[week]
+                label = f['name'].replace(".pdf", "")
+                st.markdown(f"- [{label}]({f['download_url']})")
     except Exception as e:
-        st.error("Could not fetch recaps list from GitHub.")
+        st.error(f"Could not fetch recaps list from GitHub. Error: {e}")
+        if 'resp' in locals():
+            st.text(resp.text)
 
 # ─── TAB 5: Past Results ────────────────────────────────────────────────────────
 elif tab == "Recaps":
