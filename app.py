@@ -190,11 +190,13 @@ elif tab == "Performance Breakdown":
     picks = info.query("Player == @player and Week == @week")
 
     # Prepare the table
+    DEFAULT_LOGO_URL = "https://a3.espncdn.com/combiner/i?img=%2Fi%2Fteamlogos%2Fncaa_conf%2F500%2F32.png"
     logo_map = logos.set_index("Team")["Logo"].to_dict()
+    
     rows = []
     for _, r in picks.iterrows():
-        team_logo = logo_map.get(r.Team, "")
-        opp_logo = logo_map.get(r.Opponent, "")
+        team_logo = logo_map.get(r.Team, DEFAULT_LOGO_URL)
+        opp_logo  = logo_map.get(r.Opponent, DEFAULT_LOGO_URL)
         team_html = f'<img src="{team_logo}" width="24">' if team_logo else ""
         opp_html  = f'<img src="{opp_logo}" width="24">' if opp_logo else ""
         rows.append({
