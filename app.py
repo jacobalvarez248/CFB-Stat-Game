@@ -9,6 +9,7 @@ cmap_green = LinearSegmentedColormap.from_list("green_gray", ["#217346", "#e0f2e
 
 import itertools
 import numpy as np
+import requests  
 
 #---WEEK ORDER-----------------------------------
 WEEK_ORDER = [f"Week {i}" for i in range(1, 17)] + ["Bowls"]
@@ -424,8 +425,6 @@ elif tab == "Player Stats":
     )
 
 # ─── TAB 4: Recaps ───────────────────────────────────────────────────────────────
-import requests  # Put this at the very top of your file (with other imports)
-
 elif tab == "Recaps":
     st.title("📰 Weekly Recaps")
 
