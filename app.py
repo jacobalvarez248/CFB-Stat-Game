@@ -4,6 +4,7 @@ import altair as alt
 from pathlib import Path
 from matplotlib.colors import LinearSegmentedColormap
 import itertools
+import numbpy as np
 
 #---WEEK ORDER-----------------------------------
 WEEK_ORDER = [f"Week {i}" for i in range(1, 17)] + ["Bowls"]
@@ -246,7 +247,7 @@ elif tab == "Performance Breakdown":
     st.markdown(html, unsafe_allow_html=True)
 
     # ---- Full Season by Category Table
-    st.subheader(f"Full Season by Category ({player})")
+    st.subheader(f"Full Season by Category")
 
     player_info = info.query("Player == @player")
     pivot = (
@@ -274,6 +275,20 @@ elif tab == "Performance Breakdown":
     
     pivot_reset = pivot.reset_index()
     pivot_reset["Week"] = pivot_reset["Week"].apply(short_week_label)
+    
+    # Move 'Week' to the first column
+    cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
+    pivot_reset = pivot_reset[cols]
+    
+    # Fill NaNs with blank (for aesthetics)
+    pivot_reset = pivot_reset.replace({np.nan: ""})
+    
+    # Show as Streamlit dataframe (native, scroll-free, auto width)
+    st.dataframe(
+        pivot_reset,
+        use_container_width=True,
+        hide_index=True
+    )
     
     # CSS to enforce width
     st.markdown(
