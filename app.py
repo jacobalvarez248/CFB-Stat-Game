@@ -39,7 +39,6 @@ def display_table(
             ("font-size", "13px"),
             ("padding", "4px 2px"),
         ]},
-        # Force 100% width and fixed layout, but DO NOT set background-color on the table itself!
         {"selector": "table", "props": [
             ("width", "100%"),
             ("table-layout", "fixed"),
@@ -69,17 +68,16 @@ def display_table(
             return w
         styler.format({"Week": short_week_label})
 
-    # Highlight columns with gradient
+    # ---- CONDITIONAL FORMATTING ONLY: ----
+    # Only use background_gradient for Score, don't use set_properties here!
+    if highlight and highlight in df.columns:
+        styler = styler.background_gradient(cmap=cmap, subset=[highlight])
     if highlight_cols:
         for col in highlight_cols:
             if col in df.columns:
                 styler = styler.background_gradient(cmap=cmap, subset=[col])
 
-    # Highlight and bold the total column
-    if highlight and highlight in df.columns:
-        styler = styler.set_properties(subset=[highlight], **{'font-weight': 'bold', 'background-color': '#dae3f3'})
-
-    # Bold and highlight the total row if present
+    # Bold the Total row if present
     if bold_row and "Week" in df.columns:
         if bold_row in df["Week"].values:
             idx = df.index[df["Week"] == bold_row][0]
@@ -127,7 +125,7 @@ if tab == "Standings":
     df.insert(0, "Rank", df.index + 1)
     df["Pts. From 1st"] = df["Score"] - df.loc[0, "Score"]
     display_table(df, highlight="Score")
-
+    
     st.subheader("🔀 Rankings by Week")
 
     info["CumulativeScore"] = info.groupby("Player")["Score"].cumsum()
