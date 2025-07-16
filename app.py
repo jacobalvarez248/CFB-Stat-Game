@@ -168,7 +168,7 @@ if tab == "Standings":
                     labelFontSize=8,
                     titleFontSize=8,
                     symbolLimit=30,
-                    symbolSize=30
+                    symbolSize=30,
                     columns=2
                 )
             ),
