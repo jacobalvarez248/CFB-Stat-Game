@@ -424,16 +424,27 @@ elif tab == "Player Stats":
     )
 
 # ─── TAB 4: Recaps ───────────────────────────────────────────────────────────────
+import requests  # Put this at the very top of your file (with other imports)
+
 elif tab == "Recaps":
     st.title("📰 Weekly Recaps")
-    recap_dir = Path("assets")/"recaps"
-    if not recap_dir.exists():
-        st.info("Drop your `Week 1 Recap.pdf`, `Week 2 Recap.pdf`, … into `assets/recaps/`.")
-    else:
-        for pdf in sorted(recap_dir.glob("Week *.pdf"), key=lambda p: p.stem):
-            label = pdf.stem.replace("_"," ")
-            st.markdown(f"- [{label}]({pdf.as_posix()})")
 
+    GITHUB_USER = "jalvarez2020"
+    GITHUB_REPO = "CFB-Stat-Game"
+    GITHUB_BRANCH = "main"
+    RECAPS_FOLDER = "assets/recaps"
+    GITHUB_API_URL = f"https://api.github.com/repos/{GITHUB_USER}/{GITHUB_REPO}/contents/{RECAPS_FOLDER}?ref={GITHUB_BRANCH}"
+
+    try:
+        resp = requests.get(GITHUB_API_URL)
+        resp.raise_for_status()
+        files = resp.json()
+        recaps = [f for f in files if f['name'].endswith('.pdf')]
+        for f in sorted(recaps, key=lambda x: x['name']):
+            label = f['name'].replace(".pdf", "")
+            st.markdown(f"- [{label}]({f['download_url']})")
+    except Exception as e:
+        st.error("Could not fetch recaps list from GitHub.")
 
 # ─── TAB 5: Past Results ────────────────────────────────────────────────────────
 elif tab == "Recaps":
