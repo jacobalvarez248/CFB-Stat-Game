@@ -111,9 +111,10 @@ if tab == "Standings":
         .melt("Week", var_name="Player", value_name="Rank")
     )
     
-    # Ensure weeks are ordered
-    info["WeekOrder"] = pd.Categorical(info["Week"], categories=WEEK_ORDER, ordered=True)
-    info = info.sort_values(["Player", "WeekOrder"])
+    # Ensure week order
+    rankings_by_week["Week"] = pd.Categorical(rankings_by_week["Week"], categories=WEEK_ORDER, ordered=True)
+    # Sort properly
+    rankings_by_week = rankings_by_week.sort_values(["Player", "Week"])
     
     # Calculate cumulative score per player per week
     info["CumulativeScore"] = info.groupby("Player")["Score"].cumsum()
