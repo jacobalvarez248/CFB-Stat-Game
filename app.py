@@ -100,43 +100,38 @@ if tab == "Standings":
     display_table(df, highlight="Score")
 
     st.subheader("🔀 Rankings by Week")
+
     # Calculate cumulative score per player per week
     info["CumulativeScore"] = info.groupby("Player")["Score"].cumsum()
+    info["Week"] = info["Week"].astype(str)
     
-    # Pivot so each week × player shows their cumulative score
-    cumulative_scores = info.pivot_table(
-        index="Week",
-        columns="Player",
-        values="CumulativeScore",
-        aggfunc="last",
-        fill_value=0
-    )
-    
-    # Rank each player's cumulative score each week
-    rankings_by_week = (
-        cumulative_scores.rank(axis=1, method="min", ascending=True)
-        .reset_index()
-        .melt(id_vars="Week", var_name="Player", value_name="Rank")
-    )
-    
-    # --- Build the complete (Player, Week) grid and merge for smooth lines ---
     players = sorted(info["Player"].unique())
     weeks = WEEK_ORDER
-    full_index = pd.MultiIndex.from_product([players, weeks], names=["Player", "Week"])
-    full_df = pd.DataFrame(index=full_index).reset_index()
-
-    # Merge the rankings onto this grid
-    rankings_by_week["Week"] = rankings_by_week["Week"].astype(str)
-    full_df["Week"] = full_df["Week"].astype(str)
-    merged = pd.merge(full_df, rankings_by_week, on=["Player", "Week"], how="left")
-
-    # Categorical and sort for plotting
-    merged["Week"] = pd.Categorical(merged["Week"], categories=WEEK_ORDER, ordered=True)
-    merged = merged.sort_values(["Player", "Week"])
-
-    # Build Chart
+    
+    # Create grid for every (Player, Week) pair
+    grid = pd.DataFrame(list(itertools.product(players, weeks)), columns=["Player", "Week"])
+    tmp = info[["Player", "Week", "CumulativeScore"]].copy()
+    full_cum = pd.merge(grid, tmp, how="left", on=["Player", "Week"])
+    full_cum = full_cum.sort_values(["Player", "Week"], key=lambda x: x if x.name=="Week" else None)
+    full_cum["CumulativeScore"] = full_cum.groupby("Player")["CumulativeScore"].ffill()
+    
+    # Compute ranks by cumulative score each week
+    def compute_weekly_ranks(df, week_col="Week", group_col="Player", score_col="CumulativeScore"):
+        out = []
+        for week in WEEK_ORDER:
+            week_df = df[df[week_col] == week].copy()
+            week_df["Rank"] = week_df[score_col].rank(method="min", ascending=True)
+            out.append(week_df)
+        return pd.concat(out, ignore_index=True)
+    
+    rankings = compute_weekly_ranks(full_cum)
+    
+    # Order Weeks and sort DataFrame for Altair
+    rankings["Week"] = pd.Categorical(rankings["Week"], categories=WEEK_ORDER, ordered=True)
+    rankings = rankings.sort_values(["Player", "Week"])
+    
     chart = (
-        alt.Chart(merged)
+        alt.Chart(rankings)
         .mark_line(point=True)
         .encode(
             x=alt.X(
@@ -149,7 +144,7 @@ if tab == "Standings":
                 sort="descending",
                 title=None,
                 axis=alt.Axis(labelFontSize=8, titleFontSize=8),
-                scale=alt.Scale(domain=[1, merged["Rank"].max()])
+                scale=alt.Scale(domain=[1, rankings["Rank"].max()])
             ),
             color=alt.Color(
                 "Player:N",
@@ -167,6 +162,7 @@ if tab == "Standings":
         .properties(height=400)
     )
     st.altair_chart(chart, use_container_width=True)
+
 
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
