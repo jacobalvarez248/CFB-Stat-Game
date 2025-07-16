@@ -329,44 +329,98 @@ elif tab == "Performance Breakdown":
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
     st.title("📋 All Picks (Sorted by Score)")
+
     df = info[["Player","Pick","Team","Opponent","Score"]].sort_values("Score", ascending=True)
 
-    # build an HTML table that embeds each logo image
+    # Logo mapping
+    DEFAULT_LOGO_URL = "https://a3.espncdn.com/combiner/i?img=%2Fi%2Fteamlogos%2Fncaa_conf%2F500%2F32.png"
     logo_map = logos.set_index("Team")["Logo"].to_dict()
+
+    # Build table rows with both Team and Opponent logos
     rows = []
     for _, r in df.iterrows():
-        img = logo_map.get(r.Team, "")
-        team_html = f'<img src="{img}" width="24">' if img else r.Team
+        team_logo = logo_map.get(r.Team, DEFAULT_LOGO_URL)
+        opp_logo = logo_map.get(r.Opponent, DEFAULT_LOGO_URL)
+        team_html = f'<img src="{team_logo}" width="24">' if team_logo else ""
+        opp_html  = f'<img src="{opp_logo}" width="24">' if opp_logo else ""
         rows.append({
             "Player": r.Player,
-            "Pick":    r.Pick,
-            "Team":    team_html,
-            "Opponent":r.Opponent,
-            "Score":   r.Score
+            "Pick": r.Pick,
+            "Team": team_html,
+            "Opponent": opp_html,
+            "Score": r.Score
         })
-    html = (
-        pd.DataFrame(rows)
-          .to_html(index=False, escape=False)
-          .replace("<table","<table class='dataframe'")
-    )
+
+    # Make DataFrame for display
+    df_html = pd.DataFrame(rows)
+
+    # Apply conditional formatting to Score
+    # We'll use pandas Styler here, and include HTML in Team/Opponent columns
+    def make_styler(df):
+        base_css = [
+            {"selector": "th", "props": [
+                ("background-color", "#002060"),
+                ("color", "white"),
+                ("text-align", "center"),
+                ("font-weight", "bold"),
+                ("font-size", "14px"),
+            ]},
+            {"selector": "td", "props": [
+                ("text-align", "center"),
+                ("font-size", "13px"),
+                ("padding", "4px 2px"),
+            ]},
+            {"selector": "table", "props": [
+                ("width", "100%"),
+                ("table-layout", "fixed"),
+            ]},
+        ]
+        styler = (
+            df.style
+            .set_table_styles(base_css)
+            .hide(axis="index")
+            .background_gradient(cmap=cmap, subset=["Score"])  # blue gradient
+        )
+        return styler
+
+    # Add aggressive CSS for mobile compactness
     st.markdown(
         """
         <style>
-          .dataframe {width:100% !important; overflow-x:auto;}
-          .dataframe th {
-            background-color:#002060!important;
-            color:white!important;
-            text-align:center!important;
+          .dataframe {
+            width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
+            table-layout: fixed !important;
+            font-size: 11px !important;
           }
-          .dataframe td {
-            text-align:center!important;
+          .dataframe th, .dataframe td {
+            text-align: center !important;
+            padding: 2px 1px !important;
+            max-width: 32px !important;
+            word-break: break-all !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+          }
+          .dataframe th {
+            font-size: 12px !important;
+          }
+          .dataframe img {
+            max-width: 24px !important;
+            max-height: 24px !important;
+            display: inline-block;
+            vertical-align: middle;
           }
         </style>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(html, unsafe_allow_html=True)
 
+    # Display using Styler, but make sure images are shown
+    st.markdown(
+        make_styler(df_html).to_html(escape=False),
+        unsafe_allow_html=True
+    )
 
 # ─── TAB 4: Recaps ───────────────────────────────────────────────────────────────
 elif tab == "Recaps":
