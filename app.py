@@ -56,7 +56,7 @@ def display_table(df: pd.DataFrame, highlight: str = None):
 
 # ─── 2) Load your Excel sheets ───────────────────────────────────────────────────
 xlsx = pd.read_excel(
-    Path("data") / "Stat Upload.xlsx",
+    Path("Stat Upload.xlsx"),
     sheet_name=["Info", "Logos", "Past Winners"],
 )
 info         = xlsx["Info"]          # your week-by-week picks & scores
