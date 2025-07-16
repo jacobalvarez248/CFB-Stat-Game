@@ -316,6 +316,7 @@ elif tab == "Performance Breakdown":
         "Receiving": "Rec",
         "Defensive": "Def",
         "Total": "Tot"
+    })
         
     display_table(
         pivot_reset,
