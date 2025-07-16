@@ -448,7 +448,7 @@ elif tab == "Past Results":
 # ─── TAB 6: Submission Form ─────────────────────────────────────────────────────
 elif tab == "Submission Form":
     st.title("✍️ Submission Form")
-    st.write("Or submit via the embedded Google Form below:")
+    st.write("Submit via the embedded Google Form below:")
     st.components.v1.iframe(
         "https://docs.google.com/forms/d/e/1FAIpQLSdy_WqAQlK_0gPC1xwT2mQqQucHArM9Is8jbVH3l0bVMk-HKw/viewform?embedded=true",
         height=700,
