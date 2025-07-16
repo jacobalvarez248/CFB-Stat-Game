@@ -98,7 +98,7 @@ if tab == "Standings":
     df["Pts. From 1st"] = df["Score"] - df.loc[0, "Score"]
     display_table(df, highlight="Score")
 
-   st.subheader("🔀 Rankings by Week")
+    st.subheader("🔀 Rankings by Week")
     week_scores = (
         info.pivot_table(
             index="Week",
@@ -126,7 +126,7 @@ if tab == "Standings":
         .properties(height=400)
     )
     st.altair_chart(chart, use_container_width=True)
-
+   
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
     st.title("📊 Performance Breakdown")
