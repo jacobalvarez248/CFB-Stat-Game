@@ -312,12 +312,12 @@ elif tab == "Performance Breakdown":
 
     display_table(
         pivot_reset,
-        highlight="Total",  # "Total" gets green
-        highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],  # these get blue
+        highlight="Tot",
+        highlight_cols=["Pass", "Rush", "Rec", "Def"],
         bold_row="Total",
         short_weeks=True
     )
-    
+        
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
     st.title("📋 All Picks (Sorted by Score)")
