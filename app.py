@@ -74,14 +74,16 @@ def display_table(
         styler.format({"Week": short_week_label})
 
     # ---- CONDITIONAL FORMATTING ONLY: ----
-    cmap_to_use = cmap_override if cmap_override is not None else cmap_blue
-    
-    if highlight and highlight in df.columns:
-        styler = styler.background_gradient(cmap=cmap_to_use, subset=[highlight])
+    # highlight_cols uses blue, highlight uses green
     if highlight_cols:
         for col in highlight_cols:
             if col in df.columns:
-                styler = styler.background_gradient(cmap=cmap_to_use, subset=[col])
+                styler = styler.background_gradient(cmap=cmap_blue, subset=[col])
+    
+    if highlight and highlight in df.columns:
+        styler = styler.background_gradient(cmap=cmap_green, subset=[highlight])
+        # For bold text only:
+        styler = styler.set_properties(subset=[highlight], **{'font-weight': 'bold'})
 
     # Bold the Total row if present
     if bold_row and "Week" in df.columns:
@@ -311,13 +313,12 @@ elif tab == "Performance Breakdown":
 
     display_table(
         pivot_reset,
-        highlight="Total",  
-        highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],
+        highlight="Total",  # "Total" gets green
+        highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],  # these get blue
         bold_row="Total",
-        short_weeks=True,
-        cmap_override=cmap_green, 
+        short_weeks=True
     )
-
+    
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
     st.title("📋 All Picks (Sorted by Score)")
