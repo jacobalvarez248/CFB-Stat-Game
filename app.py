@@ -77,11 +77,11 @@ def display_table(
     cmap_to_use = cmap_override if cmap_override is not None else cmap_blue
     
     if highlight and highlight in df.columns:
-        styler = styler.background_gradient(cmap=cmap, subset=[highlight])
+        styler = styler.background_gradient(cmap=cmap_to_use, subset=[highlight])
     if highlight_cols:
         for col in highlight_cols:
             if col in df.columns:
-                styler = styler.background_gradient(cmap=cmap, subset=[col])
+                styler = styler.background_gradient(cmap=cmap_to_use, subset=[col])
 
     # Bold the Total row if present
     if bold_row and "Week" in df.columns:
@@ -311,11 +311,11 @@ elif tab == "Performance Breakdown":
 
     display_table(
         pivot_reset,
-        highlight="Total",
+        highlight="Total",  
         highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],
         bold_row="Total",
         short_weeks=True,
-        cmap_override=cmap_green,
+        cmap_override=cmap_green, 
     )
 
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
