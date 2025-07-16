@@ -428,7 +428,7 @@ elif tab == "Player Stats":
 elif tab == "Recaps":
     st.title("📰 Weekly Recaps")
 
-    GITHUB_USER = "jalvarez2020"
+    GITHUB_USER = "jacobalvarez248"
     GITHUB_REPO = "CFB-Stat-Game"
     GITHUB_BRANCH = "main"
     RECAPS_FOLDER = "assets/recaps"
