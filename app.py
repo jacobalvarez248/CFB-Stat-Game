@@ -141,9 +141,10 @@ if tab == "Standings":
         return pd.concat(out, ignore_index=True)
     
     rankings = compute_weekly_ranks(full_cum)
-    rankings["Week"] = pd.Categorical(rankings["Week"], categories=WEEK_ORDER, ordered=True)
     rankings = rankings.sort_values(["Player", "Week"])
-    
+    rankings["Week"] = pd.Categorical(rankings["Week"], categories=WEEK_ORDER, ordered=True)
+    rankings["week_idx"] = rankings["Week"].apply(lambda w: WEEK_ORDER.index(str(w)))
+
     chart = (
         alt.Chart(rankings)
         .mark_line(point=True)
@@ -171,11 +172,10 @@ if tab == "Standings":
                     symbolSize=30
                 )
             ),
-            order=alt.Order("Rank:Q"),
+            order=alt.Order("week_idx:O"),
         )
         .properties(height=400)
     )
-    st.altair_chart(chart, use_container_width=True)
 
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
