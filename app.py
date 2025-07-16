@@ -328,7 +328,7 @@ elif tab == "Performance Breakdown":
         
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
-    st.title("📋 All Picks (Sorted by Score)")
+    st.title("📋 All Picks")
 
     df = info[["Player","Pick","Team","Opponent","Score"]].sort_values("Score", ascending=True)
 
@@ -346,8 +346,9 @@ elif tab == "Player Stats":
         rows.append({
             "Player": r.Player,
             "Pick": r.Pick,
+            "Role": r.Role,
             "Team": team_html,
-            "Opponent": opp_html,
+            "Opp": opp_html,
             "Score": r.Score
         })
 
