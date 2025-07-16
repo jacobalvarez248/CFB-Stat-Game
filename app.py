@@ -126,8 +126,8 @@ if tab == "Standings":
         .apply(lambda x: max([WEEK_ORDER.index(str(w)) for w in x if str(w) in WEEK_ORDER]))
         .to_dict()
     )
-    full_cum["week_idx"] = full_cum["Week"].apply(lambda w: WEEK_ORDER.index(str(w)))
-    full_cum["LastPlayed"] = full_cum["Player"].map(last_played)
+    full_cum["week_idx"] = full_cum["Week"].apply(lambda w: WEEK_ORDER.index(str(w)) if not pd.isnull(w) else -1).astype(int)
+    full_cum["LastPlayed"] = full_cum["Player"].map(last_played).astype(int)
     full_cum.loc[full_cum["week_idx"] > full_cum["LastPlayed"], "CumulativeScore"] = float('nan')
     
     # Compute ranks by cumulative score each week
