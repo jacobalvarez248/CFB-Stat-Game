@@ -246,7 +246,8 @@ elif tab == "Performance Breakdown":
     st.markdown(html, unsafe_allow_html=True)
 
     # ---- Full Season by Category Table
-    st.subheader("Full Season by Category")
+    st.subheader(f"Full Season by Category ({player})")
+
     player_info = info.query("Player == @player")
     pivot = (
         player_info.pivot_table(
@@ -264,7 +265,38 @@ elif tab == "Performance Breakdown":
     pivot["Total"] = pivot.sum(axis=1)
     pivot = pivot.reindex(WEEK_ORDER)
     pivot.loc["Total"] = pivot.sum(numeric_only=True)
-    display_table(pivot.reset_index(), highlight="Total")
+    
+    def short_week_label(w):
+        if w == "Bowls": return "BS"
+        if isinstance(w, str) and w.startswith("Week "):
+            return w.replace("Week ", "")
+        return w
+    
+    pivot_reset = pivot.reset_index()
+    pivot_reset["Week"] = pivot_reset["Week"].apply(short_week_label)
+    
+    # CSS to enforce width
+    st.markdown(
+        """
+        <style>
+        .dataframe {
+            width: 100% !important;
+            table-layout: fixed;
+            font-size: 13px;
+        }
+        .dataframe th, .dataframe td {
+            text-align: center !important;
+            padding: 4px 2px !important;
+            max-width: 70px;
+            word-break: break-word;
+            overflow: hidden;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+    
+    display_table(pivot_reset, highlight="Total")
     
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
