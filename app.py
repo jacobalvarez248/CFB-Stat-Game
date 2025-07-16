@@ -115,25 +115,30 @@ if tab == "Standings":
     week_scores = week_scores.sort_values("Week")
     
     chart = (
-        alt.Chart(week_scores)
+        alt.Chart(rankings_by_week)
         .mark_line(point=True)
         .encode(
-            x=alt.X("Week:O", sort=WEEK_ORDER, axis=alt.Axis(labelAngle=90)),
-            y=alt.Y(
-                "Rank:Q", 
-                sort="descending",
-                title=None, 
-                axis=alt.Axis(labelFontSize=8)
+            x=alt.X(
+                "Week:O",
+                sort=WEEK_ORDER,
+                axis=alt.Axis(labelAngle=90, labelFontSize=8, titleFontSize=8)
             ),
-
+            y=alt.Y(
+                "Rank:Q",
+                sort="descending",
+                title=None,
+                axis=alt.Axis(labelFontSize=8, titleFontSize=8),
+                scale=alt.Scale(domain=[1, rankings_by_week["Rank"].max()])  # 1 at top
+            ),
             color=alt.Color(
                 "Player:N",
                 legend=alt.Legend(
-                    orient="bottom",     # Move legend to the bottom
-                    direction="horizontal",  # Lay legend items out horizontally
-                    labelFontSize=10,    # Shrink legend label font size
-                    titleFontSize=11,    # Shrink legend title font size
-                    symbolLimit=30       # Limit number of symbols if needed
+                    orient="bottom",
+                    direction="horizontal",
+                    labelFontSize=8,
+                    titleFontSize=8,
+                    symbolLimit=30,
+                    symbolSize=30
                 )
             ),
             order=alt.Order("Rank:Q"),
@@ -141,7 +146,7 @@ if tab == "Standings":
         .properties(height=400)
     )
     st.altair_chart(chart, use_container_width=True)
-   
+
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
     st.title("📊 Performance Breakdown")
