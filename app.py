@@ -186,7 +186,7 @@ elif tab == "Performance Breakdown":
     week_options = [w for w in WEEK_ORDER if w in info["Week"].unique()]
     week = st.selectbox("Week", week_options)
 
-    st.subheader(f"Picks: {player} — Week {week}")
+    st.subheader(f"Picks: {player} — {week}")
     picks = info.query("Player == @player and Week == @week")
 
     # Place logo_map creation here!
