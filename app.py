@@ -65,6 +65,7 @@ wb = Path("Stat Upload.xlsx")
 # ---- Info sheet: header row is Excel row 2 (so header=1), then pick only the columns you need
 info = pd.read_excel(wb, sheet_name="Info", header=1)
 info = info[["Player", "Week", "Role", "Pick", "Team", "Opponent", "Score"]]
+info["Player"] = info["Player"].str.strip()
 
 # ---- Logos sheet: the real header labels live on Excel row 2 but row 1 is blank, so read header=None and promote row 1
 _raw = pd.read_excel(wb, sheet_name="Logos", header=None)
@@ -110,10 +111,17 @@ if tab == "Standings":
     
     # Create grid for every (Player, Week) pair
     grid = pd.DataFrame(list(itertools.product(players, weeks)), columns=["Player", "Week"])
-    tmp = info[["Player", "Week", "CumulativeScore"]].copy()
+    tmp = (
+        info[["Player", "Week", "CumulativeScore"]]
+        .drop_duplicates(subset=["Player", "Week"], keep="last")
+        .copy()
+    )
     full_cum = pd.merge(grid, tmp, how="left", on=["Player", "Week"])
     # Set Week as categorical so it sorts in WEEK_ORDER
     full_cum["Week"] = pd.Categorical(full_cum["Week"], categories=WEEK_ORDER, ordered=True)
+    dupes = full_cum.duplicated(subset=["Player", "Week"], keep=False)
+    if dupes.any():
+        st.write("DUPLICATE PAIRS:", full_cum[dupes])
     full_cum = full_cum.sort_values(["Player", "Week"])
     full_cum["CumulativeScore"] = full_cum.groupby("Player")["CumulativeScore"].ffill()
     
