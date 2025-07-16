@@ -242,6 +242,28 @@ elif tab == "Performance Breakdown":
         unsafe_allow_html=True,
     )
     st.markdown(html, unsafe_allow_html=True)
+
+    # ---- Full Season by Category Table
+    st.subheader("Full Season by Category")
+    filtered_info = info.query("Player == @player")
+    pivot = (
+        filtered_info.pivot_table(
+            index="Week",
+            columns="Role",
+            values="Score",
+            aggfunc="sum",
+            fill_value=0
+        )
+    )
+
+    for role in ["Passing", "Rushing", "Receiving", "Defensive"]:
+        if role not in pivot.columns:
+            pivot[role] = 0
+    pivot = pivot[["Passing", "Rushing", "Receiving", "Defensive"]]
+    pivot["Total"] = pivot.sum(axis=1)
+    pivot = pivot.reindex(WEEK_ORDER)
+    pivot.loc["Total"] = pivot.sum(numeric_only=True)
+    display_table(pivot.reset_index(), highlight="Total")
     
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
