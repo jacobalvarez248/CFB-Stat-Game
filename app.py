@@ -30,29 +30,24 @@ def display_table(
     bold_row: str = None,
     short_weeks: bool = False,
 ):
-    # Add CSS here to control table width and overflow
-    st.markdown(
-        """
-        <style>
-          .dataframe {
-            width: 100% !important;
-            min-width: 100% !important;
-            max-width: 100% !important;
-            table-layout: fixed;
-            font-size: 13px;
-          }
-          .dataframe td, .dataframe th {
-            text-align: center !important;
-            padding: 4px 2px !important;
-            max-width: 60px !important;
-            word-break: break-word !important;
-            overflow: hidden !important;
-            white-space: nowrap;
-          }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    base_css = [
+        {"selector": "th", "props": [
+            ("background-color", "#002060"),
+            ("color", "white"),
+            ("text-align", "center"),
+            ("font-weight", "bold"),
+            ("font-size", "14px"),
+        ]},
+        {"selector": "td", "props": [
+            ("text-align", "center"),
+            ("font-size", "13px"),
+            ("padding", "4px 2px"),
+        ]},
+        {"selector": "table", "props": [
+            ("width", "100%"),
+            ("table-layout", "fixed"),
+        ]},
+    ]
 
     num_cols = df.select_dtypes(include="number").columns
 
