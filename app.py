@@ -282,7 +282,7 @@ elif tab == "Performance Breakdown":
     st.markdown(html, unsafe_allow_html=True)
 
     # ---- Full Season by Category Table (filtered by player only) ----
-    st.subheader(f"Full Season by Category ({player})")
+    st.subheader(f"Full Season by Category")
 
     player_info = info.query("Player == @player")
     pivot = (
