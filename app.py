@@ -310,6 +310,13 @@ elif tab == "Performance Breakdown":
     pivot_reset = pivot_reset[cols]
     pivot_reset = pivot_reset.replace({np.nan: ""})
 
+    pivot_reset = pivot_reset.rename(columns={
+        "Passing": "Pass",
+        "Rushing": "Rush",
+        "Receiving": "Rec",
+        "Defensive": "Def",
+        "Total": "Tot"
+        
     display_table(
         pivot_reset,
         highlight="Tot",
