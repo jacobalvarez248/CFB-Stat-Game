@@ -436,14 +436,22 @@ elif tab == "Recaps":
 
 
 # ─── TAB 5: Past Results ────────────────────────────────────────────────────────
-elif tab == "Past Results":
-    st.title("📜 Past Winners (2017–2024)")
-    for yr in [2017,2018,2019,2021,2022,2023,2024]:
-        block = past.query("Year == @yr")[["Rank","Player","Score"]]
-        if not block.empty:
-            st.subheader(str(yr))
-            display_table(block, highlight="Score")
-
+elif tab == "Recaps":
+    st.title("📰 Weekly Recaps")
+    recap_dir = Path("assets") / "recaps"
+    if not recap_dir.exists():
+        st.info("Drop your `Week 1 Recap.pdf`, `Week 2 Recap.pdf`, … into `assets/recaps/`.")
+    else:
+        for pdf in sorted(recap_dir.glob("Week *.pdf"), key=lambda p: p.stem):
+            label = pdf.stem.replace("_", " ")
+            with open(pdf, "rb") as f:
+                pdf_bytes = f.read()
+            st.download_button(
+                label=f"Download {label}",
+                data=pdf_bytes,
+                file_name=pdf.name,
+                mime="application/pdf"
+            )
 
 # ─── TAB 6: Submission Form ─────────────────────────────────────────────────────
 elif tab == "Submission Form":
