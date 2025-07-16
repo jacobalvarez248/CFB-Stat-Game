@@ -330,7 +330,7 @@ elif tab == "Performance Breakdown":
 elif tab == "Player Stats":
     st.title("📋 All Picks")
 
-    df = info[["Player","Pick","Team","Opponent","Score"]].sort_values("Score", ascending=True)
+    df = info[["Player","Pick","Role","Team","Opponent","Score"]].sort_values("Score", ascending=True)
 
     # Logo mapping
     DEFAULT_LOGO_URL = "https://a3.espncdn.com/combiner/i?img=%2Fi%2Fteamlogos%2Fncaa_conf%2F500%2F32.png"
