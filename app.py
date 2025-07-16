@@ -119,7 +119,13 @@ if tab == "Standings":
         .mark_line(point=True)
         .encode(
             x=alt.X("Week:O", sort=WEEK_ORDER, axis=alt.Axis(labelAngle=90)),
-            y=alt.Y("Rank:Q", sort="descending"),
+            y=alt.Y(
+                "Rank:Q", 
+                sort="descending",
+                title=None, 
+                axis=alt.Axis(labelFontSize=8)
+            ),
+
             color=alt.Color(
                 "Player:N",
                 legend=alt.Legend(
