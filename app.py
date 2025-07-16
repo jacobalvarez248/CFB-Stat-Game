@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import altair as alt
@@ -102,9 +101,9 @@ if tab == "Standings":
 
     st.subheader("🔀 Rankings by Week")
 
-    # Calculate cumulative score per player per week
     info["CumulativeScore"] = info.groupby("Player")["Score"].cumsum()
     info["Week"] = info["Week"].astype(str)
+    info["Player"] = info["Player"].str.strip()
     
     players = sorted(info["Player"].unique())
     weeks = WEEK_ORDER
@@ -117,26 +116,31 @@ if tab == "Standings":
         .copy()
     )
     full_cum = pd.merge(grid, tmp, how="left", on=["Player", "Week"])
-    # Set Week as categorical so it sorts in WEEK_ORDER
     full_cum["Week"] = pd.Categorical(full_cum["Week"], categories=WEEK_ORDER, ordered=True)
-    dupes = full_cum.duplicated(subset=["Player", "Week"], keep=False)
-    if dupes.any():
-        st.write("DUPLICATE PAIRS:", full_cum[dupes])
     full_cum = full_cum.sort_values(["Player", "Week"])
     full_cum["CumulativeScore"] = full_cum.groupby("Player")["CumulativeScore"].ffill()
+    
+    # NEW: Don't show ranks for weeks after player stopped playing
+    last_played = (
+        info.groupby("Player")["Week"]
+        .apply(lambda x: max([WEEK_ORDER.index(str(w)) for w in x if str(w) in WEEK_ORDER]))
+        .to_dict()
+    )
+    full_cum["week_idx"] = full_cum["Week"].apply(lambda w: WEEK_ORDER.index(str(w)))
+    full_cum["LastPlayed"] = full_cum["Player"].map(last_played)
+    full_cum.loc[full_cum["week_idx"] > full_cum["LastPlayed"], "CumulativeScore"] = float('nan')
     
     # Compute ranks by cumulative score each week
     def compute_weekly_ranks(df, week_col="Week", group_col="Player", score_col="CumulativeScore"):
         out = []
         for week in WEEK_ORDER:
             week_df = df[df[week_col] == week].copy()
+            week_df = week_df[week_df[score_col].notna()]
             week_df["Rank"] = week_df[score_col].rank(method="min", ascending=True)
             out.append(week_df)
         return pd.concat(out, ignore_index=True)
     
     rankings = compute_weekly_ranks(full_cum)
-    
-    # Order Weeks and sort DataFrame for Altair
     rankings["Week"] = pd.Categorical(rankings["Week"], categories=WEEK_ORDER, ordered=True)
     rankings = rankings.sort_values(["Player", "Week"])
     
@@ -172,7 +176,6 @@ if tab == "Standings":
         .properties(height=400)
     )
     st.altair_chart(chart, use_container_width=True)
-
 
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
