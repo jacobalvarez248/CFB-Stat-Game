@@ -49,6 +49,7 @@ def display_table(df: pd.DataFrame, highlight: str = None):
         df.style
           .set_table_styles(base_css)
           .format({col: fmt for col in num_cols})
+          .hide(axis="index")  
     )
     if highlight and highlight in df.columns:
         styler = styler.background_gradient(cmap=cmap, subset=[highlight])
