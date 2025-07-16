@@ -98,7 +98,7 @@ if tab == "Standings":
     df["Pts. From 1st"] = df["Score"] - df.loc[0, "Score"]
     display_table(df, highlight="Score")
 
-    st.subheader("🔀 Rankings by Week")
+   st.subheader("🔀 Rankings by Week")
     week_scores = (
         info.pivot_table(
             index="Week",
@@ -110,19 +110,22 @@ if tab == "Standings":
         .reset_index()
         .melt("Week", var_name="Player", value_name="Rank")
     )
-    bump = (
+    
+    week_scores["Week"] = pd.Categorical(week_scores["Week"], categories=WEEK_ORDER, ordered=True)
+    week_scores = week_scores.sort_values("Week")
+    
+    chart = (
         alt.Chart(week_scores)
-           .mark_line(point=True)
-           .encode(
-               x=alt.X("Week:O", axis=alt.Axis(labelAngle=90)),
-               y=alt.Y("Rank:Q", sort="descending", title="Rank"),
-               color="Player:N",
-               order=alt.Order("Rank:Q"),
-           )
-           .properties(height=400)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("Week:O", sort=WEEK_ORDER, axis=alt.Axis(labelAngle=90)),
+            y=alt.Y("Rank:Q", sort="descending", title="Rank"),
+            color="Player:N",
+            order=alt.Order("Rank:Q"),
+        )
+        .properties(height=400)
     )
-    st.altair_chart(bump, use_container_width=True)
-
+    st.altair_chart(chart, use_container_width=True)
 
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
