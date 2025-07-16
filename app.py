@@ -111,16 +111,17 @@ if tab == "Standings":
         .melt("Week", var_name="Player", value_name="Rank")
     )
     
-    # Ensure week order
-    rankings_by_week["Week"] = pd.Categorical(rankings_by_week["Week"], categories=WEEK_ORDER, ordered=True)
-    # Sort properly
-    rankings_by_week = rankings_by_week.sort_values(["Player", "Week"])
-    
     # Calculate cumulative score per player per week
     info["CumulativeScore"] = info.groupby("Player")["Score"].cumsum()
     
     # Pivot so each week × player shows their cumulative score
-    cumulative_scores = info.pivot_table(index="Week", columns="Player", values="CumulativeScore", aggfunc="last", fill_value=0)
+    cumulative_scores = info.pivot_table(
+        index="Week",
+        columns="Player",
+        values="CumulativeScore",
+        aggfunc="last",
+        fill_value=0
+    )
     
     # Rank each player's cumulative score each week
     rankings_by_week = (
@@ -129,10 +130,11 @@ if tab == "Standings":
         .melt(id_vars="Week", var_name="Player", value_name="Rank")
     )
     
-    # Enforce week order and sort
+    # Enforce week order and sort by Player then Week for correct line order
     rankings_by_week["Week"] = pd.Categorical(rankings_by_week["Week"], categories=WEEK_ORDER, ordered=True)
-    rankings_by_week = rankings_by_week.sort_values("Week")
+    rankings_by_week = rankings_by_week.sort_values(["Player", "Week"])
     
+    # Build Chart
     chart = (
         alt.Chart(rankings_by_week)
         .mark_line(point=True)
@@ -147,7 +149,7 @@ if tab == "Standings":
                 sort="descending",
                 title=None,
                 axis=alt.Axis(labelFontSize=8, titleFontSize=8),
-                scale=alt.Scale(domain=[1, rankings_by_week["Rank"].max()])  # 1 at top
+                scale=alt.Scale(domain=[1, rankings_by_week["Rank"].max()])
             ),
             color=alt.Color(
                 "Player:N",
@@ -165,6 +167,7 @@ if tab == "Standings":
         .properties(height=400)
     )
     st.altair_chart(chart, use_container_width=True)
+    
 
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
