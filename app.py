@@ -17,7 +17,6 @@ st.set_page_config(
 # a blue→light-gray colormap for our conditional gradients
 cmap = LinearSegmentedColormap.from_list("blue_gray", ["#002060", "#d3d3d3"])
 
-
 # ─── 2) Utility: Responsive, Styled Table ───────────────────────────────────────
 def display_table(df: pd.DataFrame, highlight: str = None):
     base_css = [
@@ -176,6 +175,8 @@ if tab == "Standings":
         )
         .properties(height=400)
     )
+
+    st.altair_chart(chart, use_container_width=True)
 
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
