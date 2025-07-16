@@ -440,14 +440,20 @@ elif tab == "Recaps":
         resp = requests.get(GITHUB_API_URL)
         resp.raise_for_status()
         files = resp.json()
-        # Map week (e.g. "Week 1", "Bowls") to the file object
+
+        # Map week name to file object, using strict matching
         week_file_map = {}
         for f in files:
             name = f['name']
             for week in WEEK_ORDER:
-                if name.lower().startswith(week.lower()):
-                    week_file_map[week] = f
-        # Loop through weeks in order
+                if week == "Bowls":
+                    if name.lower().startswith("bowls"):
+                        week_file_map["Bowls"] = f
+                else:
+                    # Week X match: "Week X " at the start
+                    if name.lower().startswith(f"{week.lower()} "):
+                        week_file_map[week] = f
+
         for week in WEEK_ORDER:
             if week in week_file_map:
                 f = week_file_map[week]
