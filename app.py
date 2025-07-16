@@ -18,18 +18,12 @@ cmap = LinearSegmentedColormap.from_list("blue_gray", ["#002060", "#d3d3d3"])
 # ─── 2) Utility: Responsive, Styled Table ───────────────────────────────────────
 def display_table(df: pd.DataFrame, highlight: str = None):
     base_css = [
-        {
-            "selector": "th",
-            "props": [
-                ("background-color", "#002060"),
-                ("color", "white"),
-                ("text-align", "center"),
-            ],
-        },
-        {
-            "selector": "td",
-            "props": [("text-align", "center")],
-        },
+        {"selector": "th", "props": [
+            ("background-color", "#002060"),
+            ("color", "white"),
+            ("text-align", "center"),
+        ]},
+        {"selector": "td", "props": [("text-align", "center")]},
     ]
     st.markdown(
         """
@@ -40,12 +34,21 @@ def display_table(df: pd.DataFrame, highlight: str = None):
         unsafe_allow_html=True,
     )
 
-    # Only apply numeric formatting to numeric columns
     num_cols = df.select_dtypes(include="number").columns
+
+    # Apply format only if value is a real number
+    def fmt(val):
+        try:
+            if pd.isna(val):
+                return ""
+            return f"{int(val):,}"
+        except Exception:
+            return val
+
     styler = (
         df.style
-        .set_table_styles(base_css)
-        .format({col: "{:,.0f}" for col in num_cols})
+          .set_table_styles(base_css)
+          .format({col: fmt for col in num_cols})
     )
     if highlight and highlight in df.columns:
         styler = styler.background_gradient(cmap=cmap, subset=[highlight])
