@@ -189,19 +189,17 @@ elif tab == "Performance Breakdown":
     st.subheader(f"Picks: {player} — {week}")
     picks = info.query("Player == @player and Week == @week")
 
-    # Place logo_map creation here!
+    # Prepare the table
     logo_map = logos.set_index("Team")["Logo"].to_dict()
-
-    # Now build your table (see previous message for the full rows/table code)
     rows = []
     for _, r in picks.iterrows():
         team_logo = logo_map.get(r.Team, "")
         opp_logo = logo_map.get(r.Opponent, "")
-        team_html = f'<img src="{team_logo}" width="32">' if team_logo else ""
-        opp_html  = f'<img src="{opp_logo}" width="32">' if opp_logo else ""
+        team_html = f'<img src="{team_logo}" width="24">' if team_logo else ""
+        opp_html  = f'<img src="{opp_logo}" width="24">' if opp_logo else ""
         rows.append({
             "Role": r.Role,
-            "Player": r.Pick,
+            "Pick": r.Pick,
             "Team": team_html,
             "Opponent": opp_html,
             "Score": r.Score,
@@ -209,19 +207,35 @@ elif tab == "Performance Breakdown":
     df_html = pd.DataFrame(rows)
     html = (
         df_html.to_html(index=False, escape=False)
-        .replace("<table","<table class='dataframe'")
+        .replace("<table","<table class='dataframe slim-table'")
     )
+    
+    # Slim table CSS for zero side scroll
     st.markdown(
         """
         <style>
-          .dataframe {width:100% !important; overflow-x:auto;}
-          .dataframe th {
+          .slim-table {
+            width: 100% !important;
+            table-layout: fixed;
+            margin-bottom: 1em;
+          }
+          .slim-table th, .slim-table td {
+            text-align: center !important;
+            padding: 4px 2px !important;
+            font-size: 13px;
+            max-width: 60px;
+            word-break: break-word;
+            overflow: hidden;
+          }
+          .slim-table th {
             background-color:#002060!important;
             color:white!important;
-            text-align:center!important;
           }
-          .dataframe td {
-            text-align:center!important;
+          .slim-table img {
+            display: inline-block;
+            vertical-align: middle;
+            max-width: 24px;
+            max-height: 24px;
           }
         </style>
         """,
