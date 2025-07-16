@@ -112,7 +112,9 @@ if tab == "Standings":
     grid = pd.DataFrame(list(itertools.product(players, weeks)), columns=["Player", "Week"])
     tmp = info[["Player", "Week", "CumulativeScore"]].copy()
     full_cum = pd.merge(grid, tmp, how="left", on=["Player", "Week"])
-    full_cum = full_cum.sort_values(["Player", "Week"], key=lambda x: x if x.name=="Week" else None)
+    # Set Week as categorical so it sorts in WEEK_ORDER
+    full_cum["Week"] = pd.Categorical(full_cum["Week"], categories=WEEK_ORDER, ordered=True)
+    full_cum = full_cum.sort_values(["Player", "Week"])
     full_cum["CumulativeScore"] = full_cum.groupby("Player")["CumulativeScore"].ffill()
     
     # Compute ranks by cumulative score each week
