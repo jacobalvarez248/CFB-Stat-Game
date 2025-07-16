@@ -17,13 +17,6 @@ cmap = LinearSegmentedColormap.from_list("blue_gray", ["#002060", "#d3d3d3"])
 
 # ─── 2) Utility: Responsive, Styled Table ───────────────────────────────────────
 def display_table(df: pd.DataFrame, highlight: str = None):
-    """
-    Renders df as a responsive HTML table with:
-      • dark-blue headers + white text
-      • centered cells
-      • optional background_gradient on one column
-      • comma separators, zero decimal places
-    """
     base_css = [
         {
             "selector": "th",
@@ -46,15 +39,17 @@ def display_table(df: pd.DataFrame, highlight: str = None):
         """,
         unsafe_allow_html=True,
     )
+
+    # Only apply numeric formatting to numeric columns
+    num_cols = df.select_dtypes(include="number").columns
     styler = (
         df.style
-          .set_table_styles(base_css)
-          .format("{:,.0f}")
+        .set_table_styles(base_css)
+        .format({col: "{:,.0f}" for col in num_cols})
     )
-    if highlight:
+    if highlight and highlight in df.columns:
         styler = styler.background_gradient(cmap=cmap, subset=[highlight])
     st.markdown(styler.to_html(), unsafe_allow_html=True)
-
 
 # ─── 3) Load Your Excel Sheets ─────────────────────────────────────────────────
 wb = Path("Stat Upload.xlsx")
