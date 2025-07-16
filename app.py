@@ -248,7 +248,7 @@ elif tab == "Performance Breakdown":
 
     # ---- Full Season by Category Table
     st.subheader(f"Full Season by Category")
-
+    
     player_info = info.query("Player == @player")
     pivot = (
         player_info.pivot_table(
@@ -276,39 +276,15 @@ elif tab == "Performance Breakdown":
     pivot_reset = pivot.reset_index()
     pivot_reset["Week"] = pivot_reset["Week"].apply(short_week_label)
     
-    # Move 'Week' to the first column
     cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
     pivot_reset = pivot_reset[cols]
-    
-    # Fill NaNs with blank (for aesthetics)
     pivot_reset = pivot_reset.replace({np.nan: ""})
     
-    # Show as Streamlit dataframe (native, scroll-free, auto width)
+    # Only this, for a 100% width, no-scroll table
     st.dataframe(
         pivot_reset,
         use_container_width=True,
         hide_index=True
-    )
-    
-    # CSS to enforce width
-    st.markdown(
-        """
-        <style>
-        .dataframe {
-            width: 100% !important;
-            table-layout: fixed;
-            font-size: 13px;
-        }
-        .dataframe th, .dataframe td {
-            text-align: center !important;
-            padding: 4px 2px !important;
-            max-width: 70px;
-            word-break: break-word;
-            overflow: hidden;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
     )
     
     display_table(pivot_reset, highlight="Total")
