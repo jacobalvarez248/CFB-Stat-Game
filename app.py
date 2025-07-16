@@ -3,6 +3,10 @@ import pandas as pd
 import altair as alt
 from pathlib import Path
 from matplotlib.colors import LinearSegmentedColormap
+
+cmap_blue = LinearSegmentedColormap.from_list("blue_gray", ["#002060", "#d3d3d3"])
+cmap_green = LinearSegmentedColormap.from_list("green_gray", ["#217346", "#e0f2e0"])
+
 import itertools
 import numpy as np
 
@@ -25,6 +29,7 @@ def display_table(
     highlight_cols: list = None,
     bold_row: str = None,
     short_weeks: bool = False,
+    cmap_override=None,
 ):
     base_css = [
         {"selector": "th", "props": [
@@ -69,7 +74,8 @@ def display_table(
         styler.format({"Week": short_week_label})
 
     # ---- CONDITIONAL FORMATTING ONLY: ----
-    # Only use background_gradient for Score, don't use set_properties here!
+    cmap_to_use = cmap_override if cmap_override is not None else cmap_blue
+    
     if highlight and highlight in df.columns:
         styler = styler.background_gradient(cmap=cmap, subset=[highlight])
     if highlight_cols:
@@ -305,10 +311,11 @@ elif tab == "Performance Breakdown":
 
     display_table(
         pivot_reset,
-        highlight="Total",  # Highlight/embolden the "Total" column
-        highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],  # Gradient fill on stat columns
-        bold_row="Total",   # Bold and highlight the "Total" row
-        short_weeks=True,   # Shorten week labels as per your latest
+        highlight="Total",
+        highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],
+        bold_row="Total",
+        short_weeks=True,
+        cmap_override=cmap_green,
     )
 
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
