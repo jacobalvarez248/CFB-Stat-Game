@@ -185,27 +185,46 @@ elif tab == "Performance Breakdown":
     player = st.selectbox("Player", sorted(info["Player"].unique()))
     week_options = [w for w in WEEK_ORDER if w in info["Week"].unique()]
     week = st.selectbox("Week", week_options)
-    
+
     st.subheader(f"Picks: {player} — Week {week}")
     picks = info.query("Player == @player and Week == @week")
-    display_table(picks[["Role","Player","Team","Opponent","Score"]], highlight="Score")
 
-    st.subheader("Full Season Overview by Category")
-    pivot = (
-        info.pivot_table(
-            index="Week",
-            columns="Role",
-            values="Score",
-            aggfunc="sum",
-            fill_value=0
-        )
+    # Place logo_map creation here!
+    logo_map = logos.set_index("Team")["Logo"].to_dict()
+
+    # Now build your table (see previous message for the full rows/table code)
+    rows = []
+    for _, r in picks.iterrows():
+        team_logo = logo_map.get(r.Team, "")
+        team_html = f'<img src="{team_logo}" width="32">' if team_logo else ""
+        rows.append({
+            "Role": r.Role,
+            "Player": r.Player,
+            "Team": team_html,
+            "Score": r.Score,
+        })
+    df_html = pd.DataFrame(rows)
+    html = (
+        df_html.to_html(index=False, escape=False)
+        .replace("<table","<table class='dataframe'")
     )
-    for role in ["Passing","Rushing","Receiving","Defensive"]:
-        pivot.setdefault(role, 0)
-    pivot = pivot[["Passing","Rushing","Receiving","Defensive"]]
-    pivot["Total"] = pivot.sum(axis=1)
-    display_table(pivot.reset_index(), highlight="Total")
-
+    st.markdown(
+        """
+        <style>
+          .dataframe {width:100% !important; overflow-x:auto;}
+          .dataframe th {
+            background-color:#002060!important;
+            color:white!important;
+            text-align:center!important;
+          }
+          .dataframe td {
+            text-align:center!important;
+          }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(html, unsafe_allow_html=True)
 
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
