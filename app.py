@@ -4,7 +4,7 @@ import altair as alt
 from pathlib import Path
 from matplotlib.colors import LinearSegmentedColormap
 import itertools
-import numbpy as np
+import numpy as np
 
 #---WEEK ORDER-----------------------------------
 WEEK_ORDER = [f"Week {i}" for i in range(1, 17)] + ["Bowls"]
