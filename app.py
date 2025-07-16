@@ -24,8 +24,7 @@ def display_table(df: pd.DataFrame, highlight: str = None):
       • optional background_gradient on one column
       • comma separators, zero decimal places
     """
-    # base CSS
-    styles = [
+    base_css = [
         {
             "selector": "th",
             "props": [
@@ -39,7 +38,6 @@ def display_table(df: pd.DataFrame, highlight: str = None):
             "props": [("text-align", "center")],
         },
     ]
-    # force responsiveness
     st.markdown(
         """
         <style>
@@ -50,7 +48,7 @@ def display_table(df: pd.DataFrame, highlight: str = None):
     )
     styler = (
         df.style
-          .set_table_styles(styles)
+          .set_table_styles(base_css)
           .format("{:,.0f}")
     )
     if highlight:
@@ -58,19 +56,23 @@ def display_table(df: pd.DataFrame, highlight: str = None):
     st.markdown(styler.to_html(), unsafe_allow_html=True)
 
 
-# ─── 3) Load Your Excel Sheets (skip the top “metadata” row) ─────────────────────
+# ─── 3) Load Your Excel Sheets ─────────────────────────────────────────────────
 wb = Path("Stat Upload.xlsx")
-# Info sheet: real header is on Excel row 2, so header=1
+
+# ---- Info sheet: header row is Excel row 2 (so header=1), then pick only the columns you need
 info = pd.read_excel(wb, sheet_name="Info", header=1)
-info = info[["Player","Week","Role","Pick","Team","Opponent","Score"]]
+info = info[["Player", "Week", "Role", "Pick", "Team", "Opponent", "Score"]]
 
-# Logos sheet: header is also on row 2
-logos = pd.read_excel(wb, sheet_name="Logos", header=1)
-logos = logos.rename(columns={"Image URL":"Logo"}).drop(columns=[c for c in logos.columns if c not in ("Team","Logo")])
+# ---- Logos sheet: the real header labels live on Excel row 2 but row 1 is blank, so read header=None and promote row 1
+_raw = pd.read_excel(wb, sheet_name="Logos", header=None)
+_raw.columns = _raw.iloc[1]           # row index 1 has ["Team", "Image URL", NaN]
+_logos = _raw.iloc[2:]                # drop the two header rows
+_logos = _logos.loc[:, ~_logos.columns.isna()]  # drop the unnamed column
+logos = _logos.rename(columns={"Image URL": "Logo"})[["Team", "Logo"]]
 
-# Past Winners: header row 2 again
+# ---- Past Winners sheet: header row is Excel row 2
 past = pd.read_excel(wb, sheet_name="Past Winners", header=1)
-past = past[["Year","Rank","Player","Score"]]
+past = past[["Year", "Rank", "Player", "Score"]]
 
 
 # ─── 4) Sidebar Navigation ──────────────────────────────────────────────────────
@@ -83,41 +85,39 @@ tab = st.sidebar.radio(
 # ─── TAB 1: Standings ────────────────────────────────────────────────────────────
 if tab == "Standings":
     st.title("🏆 Season Standings")
-    # total up each player's score, rank ascending (lowest=1)
     df = (
-      info.groupby("Player")["Score"]
-          .sum()
-          .reset_index()
-          .sort_values("Score", ascending=True)
-          .reset_index(drop=True)
+        info.groupby("Player")["Score"]
+            .sum()
+            .reset_index()
+            .sort_values("Score", ascending=True)
+            .reset_index(drop=True)
     )
     df.insert(0, "Rank", df.index + 1)
     df["Pts. From 1st"] = df["Score"] - df.loc[0, "Score"]
     display_table(df, highlight="Score")
 
     st.subheader("🔀 Rankings by Week")
-    # build a bump chart from per-week player scores → ranks
     week_scores = (
-      info.pivot_table(
-          index="Week",
-          columns="Player",
-          values="Score",
-          aggfunc="sum",
-      )
-      .rank(axis=1, ascending=True, method="first")
-      .reset_index()
-      .melt("Week", var_name="Player", value_name="Rank")
+        info.pivot_table(
+            index="Week",
+            columns="Player",
+            values="Score",
+            aggfunc="sum",
+        )
+        .rank(axis=1, ascending=True, method="first")
+        .reset_index()
+        .melt("Week", var_name="Player", value_name="Rank")
     )
     bump = (
-      alt.Chart(week_scores)
-        .mark_line(point=True)
-        .encode(
-          x=alt.X("Week:O", axis=alt.Axis(labelAngle=90)),
-          y=alt.Y("Rank:Q", sort="descending", title="Rank"),
-          color="Player:N",
-          order=alt.Order("Rank:Q"),
-        )
-        .properties(height=400)
+        alt.Chart(week_scores)
+           .mark_line(point=True)
+           .encode(
+               x=alt.X("Week:O", axis=alt.Axis(labelAngle=90)),
+               y=alt.Y("Rank:Q", sort="descending", title="Rank"),
+               color="Player:N",
+               order=alt.Order("Rank:Q"),
+           )
+           .properties(height=400)
     )
     st.altair_chart(bump, use_container_width=True)
 
@@ -125,7 +125,6 @@ if tab == "Standings":
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
     st.title("📊 Performance Breakdown")
-    # filters
     player = st.selectbox("Player", sorted(info["Player"].unique()))
     week   = st.selectbox("Week",   sorted(info["Week"].unique()))
 
@@ -135,18 +134,16 @@ elif tab == "Performance Breakdown":
 
     st.subheader("Full Season Overview by Category")
     pivot = (
-      info.pivot_table(
-        index="Week",
-        columns="Role",
-        values="Score",
-        aggfunc="sum",
-        fill_value=0
-      )
+        info.pivot_table(
+            index="Week",
+            columns="Role",
+            values="Score",
+            aggfunc="sum",
+            fill_value=0
+        )
     )
-    # ensure all four roles exist
     for role in ["Passing","Rushing","Receiving","Defensive"]:
-        if role not in pivot.columns:
-            pivot[role] = 0
+        pivot.setdefault(role, 0)
     pivot = pivot[["Passing","Rushing","Receiving","Defensive"]]
     pivot["Total"] = pivot.sum(axis=1)
     display_table(pivot.reset_index(), highlight="Total")
@@ -157,26 +154,24 @@ elif tab == "Player Stats":
     st.title("📋 All Picks (Sorted by Score)")
     df = info[["Player","Pick","Team","Opponent","Score"]].sort_values("Score", ascending=True)
 
-    # build a small HTML table so we can embed each logo image
+    # build an HTML table that embeds each logo image
     logo_map = logos.set_index("Team")["Logo"].to_dict()
-    html_rows = []
+    rows = []
     for _, r in df.iterrows():
         img = logo_map.get(r.Team, "")
-        img_tag = f'<img src="{img}" width="24">' if img else r.Team
-        html_rows.append({
+        team_html = f'<img src="{img}" width="24">' if img else r.Team
+        rows.append({
             "Player": r.Player,
-            "Pick":   r.Pick,
-            "Team":   img_tag,
-            "Opponent": r.Opponent,
-            "Score":  r.Score
+            "Pick":    r.Pick,
+            "Team":    team_html,
+            "Opponent":r.Opponent,
+            "Score":   r.Score
         })
-
     html = (
-      pd.DataFrame(html_rows)
-        .to_html(index=False, escape=False)
-        .replace("<table","<table class='dataframe'")
+        pd.DataFrame(rows)
+          .to_html(index=False, escape=False)
+          .replace("<table","<table class='dataframe'")
     )
-    # reuse our CSS from display_table
     st.markdown(
         """
         <style>
@@ -221,7 +216,7 @@ elif tab == "Past Results":
 # ─── TAB 6: Submission Form ─────────────────────────────────────────────────────
 elif tab == "Submission Form":
     st.title("✍️ Submission Form")
-    st.write("You can also submit via the embedded Google Form below:")
+    st.write("Or submit via the embedded Google Form below:")
     st.components.v1.iframe(
         "https://docs.google.com/forms/d/e/1FAIpQLSdy_WqAQlK_0gPC1xwT2mQqQucHArM9Is8jbVH3l0bVMk-HKw/viewform?embedded=true",
         height=700,
