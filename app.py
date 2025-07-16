@@ -183,17 +183,21 @@ if tab == "Standings":
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
     st.title("📊 Performance Breakdown")
+
+    # Player select (alphabetical)
     player = st.selectbox("Player", sorted(info["Player"].unique()))
+
+    # Week select (chronological, based on what's in the data)
     week_options = [w for w in WEEK_ORDER if w in info["Week"].unique()]
     week = st.selectbox("Week", week_options)
 
+    # ---- Picks Table (filtered by player & week) ----
     st.subheader(f"Picks: {player} — {week}")
     picks = info.query("Player == @player and Week == @week")
 
-    # Prepare the table
     DEFAULT_LOGO_URL = "https://a3.espncdn.com/combiner/i?img=%2Fi%2Fteamlogos%2Fncaa_conf%2F500%2F32.png"
     logo_map = logos.set_index("Team")["Logo"].to_dict()
-    
+
     rows = []
     for _, r in picks.iterrows():
         team_logo = logo_map.get(r.Team, DEFAULT_LOGO_URL)
@@ -212,8 +216,7 @@ elif tab == "Performance Breakdown":
         df_html.to_html(index=False, escape=False)
         .replace("<table","<table class='dataframe slim-table'")
     )
-    
-    # Slim table CSS for zero side scroll
+    # Slim, scroll-free table for picks
     st.markdown(
         """
         <style>
@@ -246,9 +249,9 @@ elif tab == "Performance Breakdown":
     )
     st.markdown(html, unsafe_allow_html=True)
 
-    # ---- Full Season by Category Table
-    st.subheader(f"Full Season by Category")
-    
+    # ---- Full Season by Category Table (filtered by player only) ----
+    st.subheader(f"Full Season by Category ({player})")
+
     player_info = info.query("Player == @player")
     pivot = (
         player_info.pivot_table(
@@ -266,28 +269,25 @@ elif tab == "Performance Breakdown":
     pivot["Total"] = pivot.sum(axis=1)
     pivot = pivot.reindex(WEEK_ORDER)
     pivot.loc["Total"] = pivot.sum(numeric_only=True)
-    
+
     def short_week_label(w):
         if w == "Bowls": return "BS"
         if isinstance(w, str) and w.startswith("Week "):
             return w.replace("Week ", "")
         return w
-    
+
     pivot_reset = pivot.reset_index()
     pivot_reset["Week"] = pivot_reset["Week"].apply(short_week_label)
-    
+
     cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
     pivot_reset = pivot_reset[cols]
     pivot_reset = pivot_reset.replace({np.nan: ""})
-    
-    # Only this, for a 100% width, no-scroll table
+
     st.dataframe(
         pivot_reset,
         use_container_width=True,
         hide_index=True
     )
-    
-    display_table(pivot_reset, highlight="Total")
     
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
