@@ -1,123 +1,184 @@
+# app.py
 import streamlit as st
 import pandas as pd
 import altair as alt
-import streamlit.components.v1 as components
+from pathlib import Path
+from matplotlib.colors import LinearSegmentedColormap
 
-# 1) Page config
+# ─── 1) Page & theme config ─────────────────────────────────────────────────────
 st.set_page_config(
     page_title="CFB Stat Game",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
-# 2) Load all sheets at once
-xls = pd.read_excel("data/Stat Upload.xlsx", sheet_name=None)
+# a blue→light-gray colormap for our “Score”‐style gradients
+cmap = LinearSegmentedColormap.from_list("blue_gray", ["#002060", "#d3d3d3"])
 
-info           = xls["Info"]            # week-by-week picks & scores
-logos          = xls["Logos"]           # (if you grab URLs or local filenames)
-past_winners   = xls["Past Winners"]
-# …and any other sheets: Expected Wins, Charts, Recaps, etc.
+# a helper to render ANY DataFrame with:
+#  • dark-blue headers + white text
+#  • centered cells
+#  • optional background_gradient on one column
+#  • commas + no decimals
+def display_table(df: pd.DataFrame, highlight: str = None):
+    base_styles = [
+        {
+            "selector": "th",
+            "props": [
+                ("background-color", "#002060"),
+                ("color", "white"),
+                ("text-align", "center"),
+            ],
+        },
+        {
+            "selector": "td",
+            "props": [("text-align", "center")],
+        },
+    ]
+    st.markdown(
+        """
+        <style>
+          /* make tables responsive on mobile */
+          .dataframe {width:100% !important; overflow-x:auto;}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+    styler = (
+        df.style
+        .set_table_styles(base_styles)
+        .format("{:,.0f}")
+    )
+    if highlight:
+        styler = styler.background_gradient(cmap=cmap, subset=[highlight])
+    st.markdown(styler.to_html(), unsafe_allow_html=True)
 
-# 3) Sidebar tabs
+
+# ─── 2) Load your Excel sheets ───────────────────────────────────────────────────
+xlsx = pd.read_excel(
+    Path("data") / "Stat Upload.xlsx",
+    sheet_name=["Info", "Logos", "Past Winners"],
+)
+info         = xlsx["Info"]          # your week-by-week picks & scores
+logos        = xlsx["Logos"]         # if you need team-logo URLs
+past_winners = xlsx["Past Winners"]  # 2017–2024 history
+
+
+# ─── 3) Sidebar navigation ──────────────────────────────────────────────────────
 tab = st.sidebar.radio(
     "Navigate",
-    ["Standings", "Performance Breakdown", "Player Stats", "Recaps", "Past Results", "Submission Form"],
-    index=0
+    [
+        "Standings",
+        "Performance Breakdown",
+        "Player Stats",
+        "Recaps",
+        "Past Results",
+        "Submission Form",
+    ],
 )
 
-# --------------- TAB: Standings ---------------
-if tab == "Standings":
-    # build a standings table
-    df = info.groupby("Player")["Score"].sum().reset_index()
-    df = df.sort_values("Score", ascending=True)  # lowest = rank 1
-    df["Rank"] = range(1, len(df)+1)
-    df["Pts. From 1st"] = df["Score"] - df.iloc[0]["Score"]
-    
-    # conditional formatting: e.g. using st_aggrid for mobile
-    from st_aggrid import AgGrid, GridOptionsBuilder
 
-    # … after you’ve built your df …
-    
-    gb = GridOptionsBuilder.from_dataframe(
-        df[["Rank","Player","Score","Pts. From 1st"]]
+# ─── TAB 1: Standings ────────────────────────────────────────────────────────────
+if tab == "Standings":
+    st.header("Season Standings")
+    # compute total score, rank ascending (lowest first)
+    df = (
+        info.groupby("Player")["Score"]
+        .sum()
+        .reset_index()
+        .sort_values("Score", ascending=True)
+        .reset_index(drop=True)
     )
-    gb.configure_column(
-        "Score",
-        type=["numericColumn","numberColumnFilter"],
-        # note: no “cellStyle=” on the left, just cellStyleJs=
-        cellStyleJs=(
-            "value < 0 "
-            "? {'color':'white','background':'#002060'} "
-            ": {'color':'black','background':'#d3d3d3'}"
+    df.insert(0, "Rank", df.index + 1)
+    df["Pts. From 1st"] = df["Score"] - df.loc[0, "Score"]
+
+    display_table(df, highlight="Score")
+
+    st.subheader("Rankings by Week")
+    # build a bump‐chart: week × player ranked by that week's score
+    week_scores = (
+        info.pivot_table(
+            index="Week",
+            columns="Player",
+            values="Score",
+            aggfunc="sum",
         )
+        .rank(axis=1, method="first", ascending=True)
+        .reset_index()
+        .melt("Week", var_name="Player", value_name="Rank")
     )
-    grid_options = gb.build()
-    
-    AgGrid(
-        df,
-        gridOptions=grid_options,
-        fit_columns_on_grid_load=True,
-        enable_enterprise_modules=False,
+    chart = (
+        alt.Chart(week_scores)
+        .mark_line(point=True)
+        .encode(
+            x=alt.X("Week:O", axis=alt.Axis(labelAngle=90)),
+            y=alt.Y("Rank:Q", sort="descending", title="Rank"),
+            color="Player:N",
+            order=alt.Order("Rank:Q"),
+        )
+        .properties(height=400)
     )
-    # bump chart: Rankings by Week
-    # we need a long-form DataFrame: one row per Player×Week with their rank
-    week_ranks = (
-      info.pivot_table(index="Week", 
-                       columns="Player", 
-                       values="Score", 
-                       aggfunc="sum")
-          .rank(axis=1, method="first", ascending=True)
-          .reset_index()
-          .melt(id_vars="Week", var_name="Player", value_name="Rank")
-    )
-    chart = alt.Chart(week_ranks).mark_line(point=True).encode(
-        x=alt.X("Week:O", axis=alt.Axis(labelAngle=90)),
-        y=alt.Y("Rank:Q", sort="descending"),  # first place=1 at top
-        color="Player:N",
-        order=alt.Order("Rank:Q")
-    ).properties(height=300)
     st.altair_chart(chart, use_container_width=True)
 
-# --------------- TAB: Performance Breakdown ---------------
+
+# ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
+    st.header("Performance Breakdown")
+    # filters
     player = st.selectbox("Player", sorted(info["Player"].unique()))
-    week   = st.selectbox("Week", sorted(info["Week"].unique()))
-    # filter for picks
-    picks = info[(info.Player==player)&(info.Week==week)]
-    st.table(picks[["Category","Player","Team","Opponent","Score"]])
-    # full-season table with same styling as above
-    season = info.groupby("Week")[["Passing","Rushing","Receiving","Defensive"]].sum()
+    week   = st.selectbox("Week",   sorted(info["Week"].unique()))
+
+    st.subheader(f"Picks for {player} – Week {week}")
+    picks = info.query("Player == @player and Week == @week")
+    display_table(picks[["Category","Player","Team","Opponent","Score"]], highlight="Score")
+
+    st.subheader("Full Season Overview")
+    season = (
+        info.groupby("Week")
+        [["Passing","Rushing","Receiving","Defensive"]]
+        .sum()
+    )
     season["Total"] = season.sum(axis=1)
-    # …apply same color scales as Score above…
+    display_table(season.reset_index(), highlight="Total")
 
-# --------------- TAB: Player Stats ---------------
+
+# ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
-    df = info[["Player","Pick","Team","Opponent","Score"]]
-    df = df.sort_values("Score", ascending=True)
-    # if you have logo URLs, you can do:
-    # df["Team"] = df["Team"].apply(lambda url: f"![logo]({url})")
-    st.table(df.style.background_gradient(subset=["Score"], cmap="Blues"))
+    st.header("All Picks (Sorted by Score)")
+    df = info[["Player","Pick","Team","Opponent","Score"]].sort_values("Score", ascending=True)
+    # if you have real URLs in logos, you can replace the Team column with an <img> tag
+    display_table(df, highlight="Score")
 
-# --------------- TAB: Recaps ---------------
+
+# ─── TAB 4: Recaps ───────────────────────────────────────────────────────────────
 elif tab == "Recaps":
-    st.write("### Weekly Recaps")
-    for pdf in sorted((st.sidebar.resource("assets/recaps")).glob("Week *.pdf")):
-        week = pdf.stem
-        st.markdown(f"- [{week}]({pdf.as_posix()})")
+    st.header("Weekly Recaps")
+    recap_dir = Path("assets") / "recaps"
+    if not recap_dir.exists():
+        st.info("Create an `assets/recaps/` folder and upload your `Week #.pdf` files there.")
+    else:
+        for pdf in sorted(recap_dir.glob("Week *.pdf")):
+            label = pdf.stem  # e.g. “Week 1 Recap”
+            st.markdown(f"- [{label}]({pdf.as_posix()})")
 
-# --------------- TAB: Past Results ---------------
+
+# ─── TAB 5: Past Results ────────────────────────────────────────────────────────
 elif tab == "Past Results":
-    for year in [2017,2018,2019,2021,2022,2023,2024]:
-        df = past_winners[past_winners.Year==year]
-        df = df.sort_values("Score", ascending=True)
-        st.write(f"#### {year}")
-        st.table(df[["Rank","Player","Score"]])
+    st.header("Past Winners (2017–2024)")
+    years = [2017,2018,2019,2021,2022,2023,2024]
+    for yr in years:
+        block = past_winners.query("Year == @yr")[["Rank","Player","Score"]]
+        if not block.empty:
+            st.subheader(str(yr))
+            display_table(block, highlight="Score")
 
-# --------------- TAB: Submission Form ---------------
+
+# ─── TAB 6: Submission Form ─────────────────────────────────────────────────────
 elif tab == "Submission Form":
-    st.write("### Enter Your Picks")
-    components.iframe(
+    st.header("Make Your Picks")
+    st.write("If you’d rather use a Google Form, it’s embedded here:")
+    st.components.v1.iframe(
         "https://docs.google.com/forms/d/e/1FAIpQLSdy_WqAQlK_0gPC1xwT2mQqQucHArM9Is8jbVH3l0bVMk-HKw/viewform?embedded=true",
-        width="100%",
-        height=800
+        height=800,
+        scrolling=True,
     )
