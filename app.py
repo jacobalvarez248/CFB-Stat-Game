@@ -255,34 +255,25 @@ elif tab == "Performance Breakdown":
     st.markdown(
         """
         <style>
-          .slim-table {
+          .dataframe {
             width: 100% !important;
+            min-width: 100% !important;
+            max-width: 100% !important;
             table-layout: fixed;
-            margin-bottom: 1em;
+            font-size: 13px;
           }
-          .slim-table th, .slim-table td {
+          .dataframe td, .dataframe th {
             text-align: center !important;
             padding: 4px 2px !important;
-            font-size: 13px;
-            max-width: 60px;
-            word-break: break-word;
-            overflow: hidden;
-          }
-          .slim-table th {
-            background-color:#002060!important;
-            color:white!important;
-          }
-          .slim-table img {
-            display: inline-block;
-            vertical-align: middle;
-            max-width: 24px;
-            max-height: 24px;
+            max-width: 60px !important;
+            word-break: break-word !important;
+            overflow: hidden !important;
+            white-space: nowrap;
           }
         </style>
         """,
         unsafe_allow_html=True,
     )
-    st.markdown(html, unsafe_allow_html=True)
 
     # ---- Full Season by Category Table (filtered by player only) ----
     st.subheader(f"Full Season by Category")
