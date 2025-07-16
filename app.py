@@ -4,6 +4,25 @@ import pandas as pd
 import altair as alt
 from pathlib import Path
 from matplotlib.colors import LinearSegmentedColormap
+import itertools
+
+# Get all unique players and weeks
+players = sorted(info["Player"].unique())
+weeks = WEEK_ORDER
+
+# Build a complete index (all player-week pairs)
+full_index = pd.MultiIndex.from_product([players, weeks], names=["Player", "Week"])
+full_df = pd.DataFrame(index=full_index).reset_index()
+
+# Merge your rankings_by_week onto the complete grid
+rankings_by_week["Week"] = rankings_by_week["Week"].astype(str)
+full_df["Week"] = full_df["Week"].astype(str)
+merged = pd.merge(full_df, rankings_by_week, on=["Player", "Week"], how="left")
+
+# Now make Week a categorical for Altair (so sorting is correct)
+merged["Week"] = pd.Categorical(merged["Week"], categories=WEEK_ORDER, ordered=True)
+merged = merged.sort_values(["Player", "Week"])
+
 
 #---WEEK ORDER-----------------------------------
 WEEK_ORDER = [f"Week {i}" for i in range(1, 17)] + ["Bowls"]
@@ -136,7 +155,7 @@ if tab == "Standings":
     
     # Build Chart
     chart = (
-        alt.Chart(rankings_by_week)
+        alt.Chart(merged)
         .mark_line(point=True)
         .encode(
             x=alt.X(
@@ -149,7 +168,7 @@ if tab == "Standings":
                 sort="descending",
                 title=None,
                 axis=alt.Axis(labelFontSize=8, titleFontSize=8),
-                scale=alt.Scale(domain=[1, rankings_by_week["Rank"].max()])
+                scale=alt.Scale(domain=[1, merged["Rank"].max()])
             ),
             color=alt.Color(
                 "Player:N",
@@ -167,7 +186,6 @@ if tab == "Standings":
         .properties(height=400)
     )
     st.altair_chart(chart, use_container_width=True)
-    
 
 # ─── TAB 2: Performance Breakdown ────────────────────────────────────────────────
 elif tab == "Performance Breakdown":
