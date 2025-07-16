@@ -245,8 +245,9 @@ elif tab == "Performance Breakdown":
 
     # ---- Full Season by Category Table
     st.subheader("Full Season by Category")
+    player_info = info.query("Player == @player")
     pivot = (
-        info.pivot_table(
+        player_info.pivot_table(
             index="Week",
             columns="Role",
             values="Score",
@@ -254,7 +255,6 @@ elif tab == "Performance Breakdown":
             fill_value=0
         )
     )
-
     for role in ["Passing", "Rushing", "Receiving", "Defensive"]:
         if role not in pivot.columns:
             pivot[role] = 0
