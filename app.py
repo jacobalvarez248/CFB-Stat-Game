@@ -19,19 +19,31 @@ st.set_page_config(
 cmap = LinearSegmentedColormap.from_list("blue_gray", ["#002060", "#d3d3d3"])
 
 # ─── 2) Utility: Responsive, Styled Table ───────────────────────────────────────
-def display_table(df: pd.DataFrame, highlight: str = None):
+def display_table(
+    df: pd.DataFrame,
+    highlight: str = None,
+    highlight_cols: list = None,
+    bold_row: str = None,
+    short_weeks: bool = False,
+):
     base_css = [
         {"selector": "th", "props": [
             ("background-color", "#002060"),
             ("color", "white"),
             ("text-align", "center"),
+            ("font-weight", "bold"),
+            ("font-size", "14px"),
         ]},
-        {"selector": "td", "props": [("text-align", "center")]},
+        {"selector": "td", "props": [
+            ("text-align", "center"),
+            ("font-size", "13px"),
+            ("padding", "4px 2px"),
+        ]},
     ]
     st.markdown(
         """
         <style>
-          .dataframe {width:100% !important; overflow-x:auto;}
+          .dataframe {width:100% !important; table-layout: fixed;}
         </style>
         """,
         unsafe_allow_html=True,
@@ -39,23 +51,43 @@ def display_table(df: pd.DataFrame, highlight: str = None):
 
     num_cols = df.select_dtypes(include="number").columns
 
-    # Apply format only if value is a real number
     def fmt(val):
         try:
-            if pd.isna(val):
-                return ""
+            if pd.isna(val): return ""
             return f"{int(val):,}"
         except Exception:
             return val
 
     styler = (
         df.style
-          .set_table_styles(base_css)
-          .format({col: fmt for col in num_cols})
-          .hide(axis="index")  
+        .set_table_styles(base_css)
+        .format({col: fmt for col in num_cols})
+        .hide(axis="index")
     )
+    if short_weeks and "Week" in df.columns:
+        def short_week_label(w):
+            if w == "Bowls": return "BS"
+            if isinstance(w, str) and w.startswith("Week "):
+                return w.replace("Week ", "")
+            return w
+        styler.format({"Week": short_week_label})
+
+    # Highlight columns
+    if highlight_cols:
+        for col in highlight_cols:
+            if col in df.columns:
+                styler = styler.background_gradient(cmap=cmap, subset=[col])
+
+    # Highlight the total column
     if highlight and highlight in df.columns:
-        styler = styler.background_gradient(cmap=cmap, subset=[highlight])
+        styler = styler.set_properties(subset=[highlight], **{'font-weight': 'bold', 'background-color': '#dae3f3'})
+
+    # Bold the Total row if present
+    if bold_row:
+        if bold_row in df["Week"].values:
+            idx = df.index[df["Week"] == bold_row][0]
+            styler = styler.set_properties(subset=pd.IndexSlice[idx, :], **{'font-weight': 'bold', 'background-color': '#dae3f3'})
+
     st.markdown(styler.to_html(), unsafe_allow_html=True)
 
 # ─── 3) Load Your Excel Sheets ─────────────────────────────────────────────────
@@ -249,45 +281,40 @@ elif tab == "Performance Breakdown":
     )
     st.markdown(html, unsafe_allow_html=True)
 
-    # ---- Full Season by Category Table (filtered by player only) ----
-    st.subheader(f"Full Season by Category ({player})")
-
-    player_info = info.query("Player == @player")
-    pivot = (
-        player_info.pivot_table(
-            index="Week",
-            columns="Role",
-            values="Score",
-            aggfunc="sum",
-            fill_value=0
+        # ---- Full Season by Category Table (filtered by player only) ----
+        st.subheader(f"Full Season by Category ({player})")
+    
+        player_info = info.query("Player == @player")
+        pivot = (
+            player_info.pivot_table(
+                index="Week",
+                columns="Role",
+                values="Score",
+                aggfunc="sum",
+                fill_value=0
+            )
         )
-    )
-    for role in ["Passing", "Rushing", "Receiving", "Defensive"]:
-        if role not in pivot.columns:
-            pivot[role] = 0
-    pivot = pivot[["Passing", "Rushing", "Receiving", "Defensive"]]
-    pivot["Total"] = pivot.sum(axis=1)
-    pivot = pivot.reindex(WEEK_ORDER)
-    pivot.loc["Total"] = pivot.sum(numeric_only=True)
-
-    def short_week_label(w):
-        if w == "Bowls": return "BS"
-        if isinstance(w, str) and w.startswith("Week "):
-            return w.replace("Week ", "")
-        return w
-
-    pivot_reset = pivot.reset_index()
-    pivot_reset["Week"] = pivot_reset["Week"].apply(short_week_label)
-
-    cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
-    pivot_reset = pivot_reset[cols]
-    pivot_reset = pivot_reset.replace({np.nan: ""})
-
-    st.dataframe(
-        pivot_reset,
-        use_container_width=True,
-        hide_index=True
-    )
+        for role in ["Passing", "Rushing", "Receiving", "Defensive"]:
+            if role not in pivot.columns:
+                pivot[role] = 0
+        pivot = pivot[["Passing", "Rushing", "Receiving", "Defensive"]]
+        pivot["Total"] = pivot.sum(axis=1)
+        pivot = pivot.reindex(WEEK_ORDER)
+        pivot.loc["Total"] = pivot.sum(numeric_only=True)
+    
+        # Format for display_table
+        pivot_reset = pivot.reset_index()
+        cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
+        pivot_reset = pivot_reset[cols]
+        pivot_reset = pivot_reset.replace({np.nan: ""})
+    
+        display_table(
+            pivot_reset,
+            highlight="Total",  # Highlight/embolden the "Total" column
+            highlight_cols=["Passing", "Rushing", "Receiving", "Defensive"],  # Gradient fill on stat columns
+            bold_row="Total",   # Bold and highlight the "Total" row
+            short_weeks=True,   # Shorten week labels as per your latest
+        )
     
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
