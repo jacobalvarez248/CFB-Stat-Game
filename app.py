@@ -116,9 +116,16 @@ past = past[["Year", "Rank", "Player", "Score"]]
 # ─── 4) Sidebar Navigation ──────────────────────────────────────────────────────
 tab = st.sidebar.radio(
     "Go to:",
-    ["Standings", "Performance Breakdown", "Player Stats", "Recaps", "Past Results", "Submission Form"]
+    [
+        "Standings",
+        "Performance Breakdown",
+        "Player Stats",
+        "Who have I picked?",
+        "Recaps",
+        "Past Results",
+        "Submission Form"
+    ]
 )
-
 
 # ─── TAB 1: Standings ────────────────────────────────────────────────────────────
 if tab == "Standings":
@@ -424,7 +431,28 @@ elif tab == "Player Stats":
         unsafe_allow_html=True
     )
 
-# ─── TAB 4: Recaps ───────────────────────────────────────────────────────────────
+# ─── TAB 4: Who have I picked? ─────────────────────────────────────────────────────
+elif tab == "Who have I picked?":
+    st.title("📝 Who have I picked?")
+
+    # Player filter at the top
+    player = st.selectbox("Player", sorted(info["Player"].unique()))
+
+    # Filter the data
+    picks = info.query("Player == @player")[["Week", "Role", "Player", "Score"]]
+
+    # (Optional) Order by week using your week order
+    picks["Week"] = pd.Categorical(picks["Week"], categories=WEEK_ORDER, ordered=True)
+    picks = picks.sort_values("Week")
+
+    # Use your display_table utility for consistent formatting
+    display_table(
+        picks.reset_index(drop=True),
+        highlight="Score",
+        short_weeks=True
+    )
+
+# ─── TAB 5: Recaps ───────────────────────────────────────────────────────────────
 elif tab == "Recaps":
     st.title("📰 Weekly Recaps")
 
@@ -464,7 +492,7 @@ elif tab == "Recaps":
         if 'resp' in locals():
             st.text(resp.text)
 
-# ─── TAB 5: Past Results ────────────────────────────────────────────────────────
+# ─── TAB 6: Past Results ────────────────────────────────────────────────────────
 elif tab == "Past Results":
     st.title("📜 Past Winners (2017–2024)")
     for yr in [2017,2018,2019,2021,2022,2023,2024]:
@@ -473,7 +501,7 @@ elif tab == "Past Results":
             st.subheader(str(yr))
             display_table(block, highlight="Score")
 
-# ─── TAB 6: Submission Form ─────────────────────────────────────────────────────
+# ─── TAB 7: Submission Form ─────────────────────────────────────────────────────
 elif tab == "Submission Form":
     st.title("✍️ Submission Form")
     st.write("Submit via the embedded Google Form below:")
