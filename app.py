@@ -435,17 +435,13 @@ elif tab == "Player Stats":
 elif tab == "Who have I picked?":
     st.title("📝 Who have I picked?")
 
-    # Player filter at the top
     player = st.selectbox("Player", sorted(info["Player"].unique()))
 
-    # Filter the data
-    picks = info.query("Pick == @pick")[["Week", "Role", "Pick", "Score"]]
-
-    # (Optional) Order by week using your week order
+    # Table columns: Week, Role, Pick, Score
+    picks = info.query("Player == @player")[["Week", "Role", "Pick", "Score"]]
     picks["Week"] = pd.Categorical(picks["Week"], categories=WEEK_ORDER, ordered=True)
     picks = picks.sort_values("Week")
 
-    # Use your display_table utility for consistent formatting
     display_table(
         picks.reset_index(drop=True),
         highlight="Score",
