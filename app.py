@@ -439,7 +439,7 @@ elif tab == "Who have I picked?":
     player = st.selectbox("Player", sorted(info["Player"].unique()))
 
     # Filter the data
-    picks = info.query("Player == @player")[["Week", "Role", "Player", "Score"]]
+    picks = info.query("Player == @pick")[["Week", "Role", "Player", "Score"]]
 
     # (Optional) Order by week using your week order
     picks["Week"] = pd.Categorical(picks["Week"], categories=WEEK_ORDER, ordered=True)
