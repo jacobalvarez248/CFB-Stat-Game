@@ -96,22 +96,27 @@ def display_table(
 # ─── 3) Load Your Excel Sheets ─────────────────────────────────────────────────
 wb = Path("Stat Upload.xlsx")
 
-# ---- Info sheet: header row is Excel row 2 (so header=1), then pick only the columns you need
+# Info: header row is Excel row 2 (header=1)
 info = pd.read_excel(wb, sheet_name="Info", header=1)
 info = info[["Player", "Week", "Role", "Pick", "Team", "Opponent", "Score"]]
-info["Player"] = info["Player"].str.strip()
+info["Player"] = info["Player"].astype(str).str.strip()
 
-# ---- Logos sheet: the real header labels live on Excel row 2 but row 1 is blank, so read header=None and promote row 1
-_raw = pd.read_excel(wb, sheet_name="Logos", header=None)
-_raw.columns = _raw.iloc[1]           # row index 1 has ["Team", "Image URL", NaN]
-_logos = _raw.iloc[2:]                # drop the two header rows
-_logos = _logos.loc[:, ~_logos.columns.isna()]  # drop the unnamed column
-logos = _logos.rename(columns={"Image URL": "Logo"})[["Team", "Logo"]]
+# Logos: header row is Excel row 2 (header=1); rename "Image URL" → "Logo"
+logos = pd.read_excel(wb, sheet_name="Logos", header=1)
+logos = logos.rename(columns={"Image URL": "Logo"})[["Team", "Logo"]]
 
-# ---- Past Winners sheet: header row is Excel row 2
+# Normalize team names everywhere to ensure logo lookups don't miss due to spacing
+info["Team"] = info["Team"].astype(str).str.strip()
+info["Opponent"] = info["Opponent"].astype(str).str.strip()
+logos["Team"] = logos["Team"].astype(str).str.strip()
+logos["Logo"] = logos["Logo"].astype(str).str.strip()
+
+# Build logo map
+logo_map = dict(zip(logos["Team"], logos["Logo"]))
+
+# Past Winners: header row is Excel row 2 (header=1)
 past = pd.read_excel(wb, sheet_name="Past Winners", header=1)
 past = past[["Year", "Rank", "Player", "Score"]]
-
 
 # ─── 4) Sidebar Navigation ──────────────────────────────────────────────────────
 tab = st.sidebar.radio(
