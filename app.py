@@ -316,8 +316,8 @@ elif tab == "Performance Breakdown":
     pivot_reset = pivot.reset_index()
     cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
     pivot_reset = pivot_reset[cols]
-    pivot_reset = pivot_reset.replace({np.nan: ""})
     
+    # Rename the columns
     pivot_reset = pivot_reset.rename(columns={
         "Passing": "Pass",
         "Rushing": "Rush",
@@ -326,10 +326,17 @@ elif tab == "Performance Breakdown":
         "Total": "Tot"
     })
     
-    # 🔧 Remove decimal points
-    num_cols = pivot_reset.select_dtypes(include="number").columns
-    pivot_reset[num_cols] = pivot_reset[num_cols].fillna(0).astype(int)
+    # ✅ INSERT THIS BLOCK HERE
+    # Ensure correct column names and integer formatting
+    pivot_reset = pivot_reset.replace({np.nan: ""})
     
+    # Convert only known numeric columns
+    for col in ["Pass", "Rush", "Rec", "Def", "Tot"]:
+        if col in pivot_reset.columns:
+            # Only convert if not already int
+            pivot_reset[col] = pd.to_numeric(pivot_reset[col], errors='coerce').fillna(0).astype(int)
+    
+    # Now display
     display_table(
         pivot_reset,
         highlight="Tot",
@@ -337,6 +344,7 @@ elif tab == "Performance Breakdown":
         bold_row="Total",
         short_weeks=True
     )
+
 
         
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
