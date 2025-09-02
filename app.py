@@ -77,12 +77,12 @@ def display_table(
     # highlight_cols uses blue, highlight uses green
     if highlight_cols:
         for col in highlight_cols:
-            if col in df.columns:
+            if col in df.columns and pd.api.types.is_numeric_dtype(df[col]):
                 styler = styler.background_gradient(cmap=cmap_blue, subset=[col])
+
     
-    if highlight and highlight in df.columns:
+    if highlight and highlight in df.columns and pd.api.types.is_numeric_dtype(df[highlight]):
         styler = styler.background_gradient(cmap=cmap_green, subset=[highlight])
-        # For bold text only:
         styler = styler.set_properties(subset=[highlight], **{'font-weight': 'bold'})
 
     # Bold the Total row if present
