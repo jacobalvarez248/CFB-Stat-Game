@@ -31,11 +31,6 @@ def display_table(
     bold_row: str = None,
     short_weeks: bool = False,
 ):
-    # guard empty tables early
-    if df is None or len(df) == 0:
-        st.info("No rows to display.")
-        return
-
     base_css = [
         {"selector": "th", "props": [
             ("background-color", "#002060"),
@@ -55,13 +50,11 @@ def display_table(
         ]},
     ]
 
-    # which columns are numeric?
     num_cols = df.select_dtypes(include="number").columns
 
     def fmt(val):
         try:
-            if pd.isna(val): 
-                return ""
+            if pd.isna(val): return ""
             return f"{int(val):,}"
         except Exception:
             return val
@@ -72,80 +65,53 @@ def display_table(
         .format({col: fmt for col in num_cols})
         .hide(axis="index")
     )
-
     if short_weeks and "Week" in df.columns:
         def short_week_label(w):
             if w == "Bowls": return "BS"
             if isinstance(w, str) and w.startswith("Week "):
                 return w.replace("Week ", "")
             return w
-        styler = styler.format({"Week": short_week_label})
+        styler.format({"Week": short_week_label})
 
-    # ---- HIGHLIGHT MULTIPLE COLUMNS ----
+    # ---- CONDITIONAL FORMATTING ONLY: ----
+    # highlight_cols uses blue, highlight uses green
     if highlight_cols:
-        safe_numeric = [c for c in highlight_cols if c in df.columns and c in num_cols]
-        non_numeric  = [c for c in highlight_cols if c in df.columns and c not in num_cols]
-
-        # gradient only on numeric columns
-        for col in safe_numeric:
-            styler = styler.background_gradient(cmap=cmap_blue, subset=[col])
-
-        # flat background on non-numeric columns
-        if non_numeric:
-            styler = styler.set_properties(
-                subset=pd.IndexSlice[:, non_numeric],
-                **{"background-color": "#dae3f3"}  # light blue-ish
-            )
-
-    # ---- HIGHLIGHT SINGLE COLUMN ----
+        for col in highlight_cols:
+            if col in df.columns:
+                styler = styler.background_gradient(cmap=cmap_blue, subset=[col])
+    
     if highlight and highlight in df.columns:
-        if highlight in num_cols:
-            # gradient + bold for numeric
-            styler = styler.background_gradient(cmap=cmap_green, subset=[highlight])
-            styler = styler.set_properties(subset=[highlight], **{"font-weight": "bold"})
-        else:
-            # flat background + bold for non-numeric
-            styler = styler.set_properties(
-                subset=[highlight],
-                **{"background-color": "#cfead6", "font-weight": "bold"}  # light green-ish
-            )
+        styler = styler.background_gradient(cmap=cmap_green, subset=[highlight])
+        # For bold text only:
+        styler = styler.set_properties(subset=[highlight], **{'font-weight': 'bold'})
 
-    # ---- BOLD A SPECIFIC ROW BY 'Week' LABEL ----
-    if bold_row and "Week" in df.columns and bold_row in df["Week"].values:
-        idx = df.index[df["Week"] == bold_row][0]
-        styler = styler.set_properties(
-            subset=pd.IndexSlice[idx, :],
-            **{"font-weight": "bold", "background-color": "#f1f5fb"}
-        )
+    # Bold the Total row if present
+    if bold_row and "Week" in df.columns:
+        if bold_row in df["Week"].values:
+            idx = df.index[df["Week"] == bold_row][0]
+            styler = styler.set_properties(subset=pd.IndexSlice[idx, :], **{'font-weight': 'bold', 'background-color': '#dae3f3'})
 
     st.markdown(styler.to_html(), unsafe_allow_html=True)
-
-    
 
 # ─── 3) Load Your Excel Sheets ─────────────────────────────────────────────────
 wb = Path("Stat Upload.xlsx")
 
-# Info: header row is Excel row 2 (header=1)
+# ---- Info sheet: header row is Excel row 2 (so header=1), then pick only the columns you need
 info = pd.read_excel(wb, sheet_name="Info", header=1)
 info = info[["Player", "Week", "Role", "Pick", "Team", "Opponent", "Score"]]
-info["Player"] = info["Player"].astype(str).str.strip()
+info["Player"] = info["Player"].str.strip()
 
-# Logos: header row is Excel row 2 (header=1); rename "Image URL" → "Logo"
-logos = pd.read_excel(wb, sheet_name="Logos", header=1)
-logos = logos.rename(columns={"Image URL": "Logo"})[["Team", "Logo"]]
+# ---- Logos sheet: the real header labels live on Excel row 2 but row 1 is blank, so read header=None and promote row 1
+_raw = pd.read_excel(wb, sheet_name="Logos", header=None)
+_raw.columns = _raw.iloc[1]           # row index 1 has ["Team", "Image URL", NaN]
+_logos = _raw.iloc[2:]                # drop the two header rows
+_logos = _logos.loc[:, ~_logos.columns.isna()]  # drop the unnamed column
+logos = _logos.rename(columns={"Image URL": "Logo"})[["Team", "Logo"]]
 
-# Normalize team names everywhere to ensure logo lookups don't miss due to spacing
-info["Team"] = info["Team"].astype(str).str.strip()
-info["Opponent"] = info["Opponent"].astype(str).str.strip()
-logos["Team"] = logos["Team"].astype(str).str.strip()
-logos["Logo"] = logos["Logo"].astype(str).str.strip()
-
-# Build logo map
-logo_map = dict(zip(logos["Team"], logos["Logo"]))
-
-# Past Winners: header row is Excel row 2 (header=1)
+# ---- Past Winners sheet: header row is Excel row 2
 past = pd.read_excel(wb, sheet_name="Past Winners", header=1)
 past = past[["Year", "Rank", "Player", "Score"]]
+
 
 # ─── 4) Sidebar Navigation ──────────────────────────────────────────────────────
 tab = st.sidebar.radio(
