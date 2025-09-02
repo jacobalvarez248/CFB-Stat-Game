@@ -317,7 +317,7 @@ elif tab == "Performance Breakdown":
     cols = ["Week"] + [col for col in pivot_reset.columns if col != "Week"]
     pivot_reset = pivot_reset[cols]
     pivot_reset = pivot_reset.replace({np.nan: ""})
-
+    
     pivot_reset = pivot_reset.rename(columns={
         "Passing": "Pass",
         "Rushing": "Rush",
@@ -325,11 +325,11 @@ elif tab == "Performance Breakdown":
         "Defensive": "Def",
         "Total": "Tot"
     })
-
-    # Convert numeric columns to integers (removes decimal points)
+    
+    # 🔧 Remove decimal points
     num_cols = pivot_reset.select_dtypes(include="number").columns
     pivot_reset[num_cols] = pivot_reset[num_cols].fillna(0).astype(int)
-
+    
     display_table(
         pivot_reset,
         highlight="Tot",
@@ -337,6 +337,7 @@ elif tab == "Performance Breakdown":
         bold_row="Total",
         short_weeks=True
     )
+
         
 # ─── TAB 3: Player Stats ────────────────────────────────────────────────────────
 elif tab == "Player Stats":
