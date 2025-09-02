@@ -325,7 +325,11 @@ elif tab == "Performance Breakdown":
         "Defensive": "Def",
         "Total": "Tot"
     })
-        
+
+    # Convert numeric columns to integers (removes decimal points)
+    num_cols = pivot_reset.select_dtypes(include="number").columns
+    pivot_reset[num_cols] = pivot_reset[num_cols].fillna(0).astype(int)
+
     display_table(
         pivot_reset,
         highlight="Tot",
