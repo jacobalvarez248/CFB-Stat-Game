@@ -503,8 +503,8 @@ elif tab == "Recaps":
 
 # ─── TAB 6: Past Results ────────────────────────────────────────────────────────
 elif tab == "Past Results":
-    st.title("📜 Past Winners (2017–2024)")
-    for yr in [2017,2018,2019,2021,2022,2023,2024]:
+    st.title("📜 Past Winners (2017–2025)")
+    for yr in [2017,2018,2019,2021,2022,2023,2024,2025]:
         block = past.query("Year == @yr")[["Rank","Player","Score"]]
         if not block.empty:
             st.subheader(str(yr))
